@@ -8,7 +8,7 @@
 #include <windowsx.h>
 #include "StringUtil.h"
 #include "camera_math.h"
-#define debug_cam
+//#define debug_cam
 bool CameraMods::update_cam()
 {
     if (!enabled)
@@ -17,9 +17,16 @@ bool CameraMods::update_cam()
     Zeal::EqStructures::Entity* self = Zeal::EqGame::get_view_actor_entity();
     if (!self)
         return false;
+
+
+
     Zeal::EqStructures::CameraInfo* cam = Zeal::EqGame::get_camera();
     Vec3 head_pos = Zeal::EqGame::get_view_actor_head_pos();
     Vec3 wanted_pos = camera_math::get_cam_pos_behind(head_pos, current_zoom, zeal_cam_yaw/*self->Heading*/, -zeal_cam_pitch);
+
+#ifdef debug_cam
+    ZealService::get_instance()->labels_hook->print_debug_info("View actor: %i\nHead: %s\nWanted: %s", self, head_pos.toString().c_str(), wanted_pos.toString().c_str());
+#endif
     bool rval = Zeal::EqGame::collide_with_world(head_pos, wanted_pos, wanted_pos);
     cam->Position = wanted_pos;
     cam->Heading = zeal_cam_yaw;// self->Heading;
@@ -152,6 +159,7 @@ void CameraMods::proc_mouse()
                     if (camera_view == Zeal::EqEnums::CameraView::ZealCam)
                     {
                         zeal_cam_yaw -= smoothMouseDeltaX;
+                        zeal_cam_yaw = fmodf(zeal_cam_yaw, 512.f); //eventually the player would stop turning but camera would without normalizing
                         self->Heading = zeal_cam_yaw;
                     }
                     else
@@ -187,6 +195,7 @@ void CameraMods::proc_mouse()
         if (camera_view == Zeal::EqEnums::CameraView::ZealCam)
            update_cam();
     }
+
 }
 
 void __fastcall procMouse(int eq, int unused, int a1)
@@ -234,15 +243,16 @@ void CameraMods::handle_camera_motion_binds(int cmd, bool is_down)
         cmd_key_map.clear();
         return;
     }
-    if ((camera_view == Zeal::EqEnums::CameraView::ZealCam) || (cmd == 19)) //allow zoom out
-    {
+
+   // if ((camera_view == Zeal::EqEnums::CameraView::ZealCam) || (cmd == 19)) //allow zoom out
+ //   {
         if (is_down)
             cmd_key_map[cmd] = true;
         else
             cmd_key_map[cmd] = false;
-        return;
-    }
-    cmd_key_map[cmd] = false;
+   //     return;
+  //  }
+ //   cmd_key_map[cmd] = false;
 }
 
 // didn't want to clutter handle_binds() with specific logic to this situation.
@@ -299,9 +309,6 @@ void CameraMods::tick_key_move()
         mouse_wheel(-120);
     }
 
-#ifdef debug_cam
-    ZealService::get_instance()->labels_hook->print_debug_info("M1: [%i]\nCam: [%i]\nOverTitleBar: [%i]\nIsGameUiHovered: [%i]", *Zeal::EqGame::is_left_mouse_down, camera_view, is_over_title_bar(), Zeal::EqGame::is_game_ui_window_hovered());
-#endif
     if (!*Zeal::EqGame::is_right_mouse_down && *Zeal::EqGame::is_left_mouse_down && camera_view == Zeal::EqEnums::CameraView::ZealCam && !is_over_title_bar() && !Zeal::EqGame::is_game_ui_window_hovered())
     {
         if (!lmouse_time)
@@ -313,11 +320,11 @@ void CameraMods::tick_key_move()
         if (GetTickCount64() - lmouse_time > 0 )
         {
             HWND gwnd = Zeal::EqGame::get_game_window();
+            GetCursorPos(&lmouse_cursor_pos);
             if (gwnd == WindowFromPoint(lmouse_cursor_pos))
             {
                 if (hide_cursor)
                 {
-                    GetCursorPos(&lmouse_cursor_pos);
                     mem::write<byte>(0x53edef, 0xEB);
                     hide_cursor = false;
                 }
@@ -357,14 +364,14 @@ void CameraMods::tick_key_move()
                 break;
             }
             case 15: //up
-                zeal_cam_pitch -= 0.3f;
-                if (zeal_cam_pitch <= -89.99f)
-                    zeal_cam_pitch = -89.99f;
+                //zeal_cam_pitch -= 0.3f;
+                //if (zeal_cam_pitch <= -89.99f)
+                //    zeal_cam_pitch = -89.99f;
                 break;
             case 16: //down
-                zeal_cam_pitch += 0.3f;
-                if (zeal_cam_pitch >= 89.99f)
-                    zeal_cam_pitch = 89.99f;
+                //zeal_cam_pitch += 0.3f;
+                //if (zeal_cam_pitch >= 89.99f)
+                //    zeal_cam_pitch = 89.99f;
                 break;
             case 18: //zoom in
                 if (desired_zoom > 0)
@@ -403,7 +410,16 @@ void CameraMods::update_fps_sensitivity()
     sensitivity_y *= multiplier;
     lastTime = currentTime;
 }
-
+void CameraMods::callback_render()
+{
+    if (enabled)
+    {
+        if (!*Zeal::EqGame::is_right_mouse_down && Zeal::EqGame::is_in_game() && *Zeal::EqGame::camera_view == Zeal::EqEnums::CameraView::ZealCam)
+        {
+            update_cam();
+        }
+    }
+}
 void CameraMods::callback_main()
 {
     static int prev_view = *Zeal::EqGame::camera_view;
@@ -428,20 +444,15 @@ void CameraMods::callback_main()
         }
         
 
-        if (!*Zeal::EqGame::is_right_mouse_down && Zeal::EqGame::is_in_game() && *Zeal::EqGame::camera_view == Zeal::EqEnums::CameraView::ZealCam)
-        {
-           update_cam();
-        }
+           
     }
     prev_view = *Zeal::EqGame::camera_view;
 }
-
-void _fastcall doCharacterSelection(int t, int u)
+void CameraMods::callback_characterselect()
 {
     ZealService* zeal = ZealService::get_instance();
     zeal->camera_mods->toggle_zeal_cam(false);
-    zeal->hooks->hook_map["DoCharacterSelection"]->original(doCharacterSelection)(t, u);
-}
+ }
 
 void CameraMods::load_settings(IO_ini* ini)
 {
@@ -509,9 +520,10 @@ CameraMods::CameraMods(ZealService* zeal, IO_ini* ini)
     fps = 0;
     height = 0;
     zeal->main_loop_hook->add_callback([this]() { callback_main();  });
+    zeal->main_loop_hook->add_callback([this]() { callback_render();  }, callback_fn::Render);
+    zeal->main_loop_hook->add_callback([this]() { callback_characterselect();  }, callback_fn::CharacterSelect);
     zeal->hooks->Add("HandleMouseWheel", Zeal::EqGame::EqGameInternal::fn_handle_mouseweheel, handle_mouse_wheel, hook_type_detour);
     zeal->hooks->Add("procMouse", 0x537707, procMouse, hook_type_detour);
-    zeal->hooks->Add("DoCharacterSelection", 0x53b9cf, doCharacterSelection, hook_type_detour);
     zeal->hooks->Add("procRightMouse", 0x54699d, procRightMouse, hook_type_detour);
 
     zeal->commands_hook->add("/zealcam", { "/smoothing" },
