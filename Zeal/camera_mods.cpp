@@ -310,7 +310,7 @@ void CameraMods::tick_key_move()
             lmouse_time = GetTickCount64();
         }
 
-        if (GetTickCount64() - lmouse_time > 200 )
+        if (GetTickCount64() - lmouse_time > 0 )
         {
             HWND gwnd = Zeal::EqGame::get_game_window();
             if (gwnd == WindowFromPoint(lmouse_cursor_pos))
