@@ -21,9 +21,10 @@
 #include "outputfile.h"
 #include "experience.h"
 #include "buff_timers.h"
-#include "auto_stand.h"
+#include "player_movement.h"
 #include "spellsets.h"
 #include "alarm.h"
+#include "netstat.h"
 
 #include "Zeal.h"
 
