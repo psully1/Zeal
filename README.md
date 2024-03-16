@@ -40,7 +40,6 @@ ___
   - **Description:** Shows the version of zeal.
 
 - `/zealinput`
-  - **Arguments:** ``
   - **Description:** toggles the zeal input setup for any input in game, giving you a more modern input (ctrl+c, ctrl+v, left, right, shift left+right for highlighting, home, end ect).
 
 - `/help zeal`
@@ -63,6 +62,9 @@ ___
 
 - `/bluecon`
   - **Description:** Changes the blue con color to usercolor #70 which is otherwise unused, you can edit in the options window.
+
+- `/zealinput`
+  - **Description:** toggles zealinput for input boxes in game (chat windows ect) which gives it a more modern feel with keyboard binds including copy and paste.
 
 - `/alarm`
   - **Arguments:** `oldui`
