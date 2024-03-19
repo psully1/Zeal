@@ -20,10 +20,10 @@ bool GetLabelFromEq(int EqType, Zeal::EqUI::CXSTR* str, bool* override_color, UL
 	{
 	case 80:
 	{
-		if (!zeal->experience)
+		if (!zeal->experience && Zeal::EqGame::get_char_info())
 			return true;
-		int max_mana = Zeal::EqGame::EqGameInternal::get_max_mana(*Zeal::EqGame::ptr_LocalPC, 0);
-		int mana = Zeal::EqGame::EqGameInternal::get_cur_mana(*Zeal::EqGame::ptr_LocalPC, 0);
+		int max_mana = Zeal::EqGame::get_char_info()->max_mana();//  Zeal::EqGame::EqGameInternal::get_max_mana(*Zeal::EqGame::ptr_LocalPC, 0);
+		int mana = Zeal::EqGame::get_char_info()->mana(); //Zeal::EqGame::EqGameInternal::get_cur_mana(*Zeal::EqGame::ptr_LocalPC, 0);
 		Zeal::EqGame::CXStr_PrintString(str, "%d/%d", mana, max_mana);
 		*override_color = false;
 		return true;
@@ -56,33 +56,23 @@ bool GetLabelFromEq(int EqType, Zeal::EqUI::CXSTR* str, bool* override_color, UL
 	}
 	case 124:
 	{
-		if (*Zeal::EqGame::ptr_LocalPC)
-		{
-			int mana = Zeal::EqGame::EqGameInternal::get_cur_mana(*Zeal::EqGame::ptr_LocalPC, 0);
-			Zeal::EqGame::CXStr_PrintString(str, "%d", mana);
-			*override_color = false;
-		}
+		if (Zeal::EqGame::get_char_info())
+			Zeal::EqGame::CXStr_PrintString(str, "%d", Zeal::EqGame::get_char_info()->mana());
+		*override_color = false;
 		return true;
 	}
 	case 125:
 	{
-		if (*Zeal::EqGame::ptr_LocalPC)
-		{
-			int max_mana = Zeal::EqGame::EqGameInternal::get_max_mana(*Zeal::EqGame::ptr_LocalPC, 0);
-			Zeal::EqGame::CXStr_PrintString(str, "%d", max_mana);
-			*override_color = false;
-		}
+		if (Zeal::EqGame::get_char_info())
+			Zeal::EqGame::CXStr_PrintString(str, "%d", Zeal::EqGame::get_char_info()->max_mana());
+		*override_color = false;
 		return true;
 	}
 	case 255: //debug label
 	{
-		if (*Zeal::EqGame::ptr_LocalPC)
-		{
-			int max_mana = Zeal::EqGame::EqGameInternal::get_max_mana(*Zeal::EqGame::ptr_LocalPC, 0);
-			Zeal::EqGame::CXStr_PrintString(str, "%s", ZealService::get_instance()->labels_hook->debug_info.c_str());
-			ZealService::get_instance()->labels_hook->debug_info = "";
-			*override_color = false;
-		}
+		Zeal::EqGame::CXStr_PrintString(str, "%s", ZealService::get_instance()->labels_hook->debug_info.c_str());
+		ZealService::get_instance()->labels_hook->debug_info = "";
+		*override_color = false;
 		return true;
 	}
 	default:

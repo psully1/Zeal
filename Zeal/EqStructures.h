@@ -321,6 +321,18 @@ namespace Zeal
 		};
 		struct EQCHARINFO
 		{
+			float encum_factor()
+			{
+				return reinterpret_cast<float(__thiscall*)(EQCHARINFO*)>(0x4bb9c7)(this);
+			}
+			short max_mana()
+			{
+				return reinterpret_cast<short(__thiscall*)(EQCHARINFO*)>(0x4B9483)(this);
+			} 
+			short mana()
+			{
+				return reinterpret_cast<short(__thiscall*)(EQCHARINFO*)>(0x4b9450)(this);
+			}
 			/* 0x0000 */ BYTE Unknown0000[2];
 			/* 0x0002 */ CHAR Name[64]; // [0x40]
 			/* 0x0042 */ CHAR LastName[70]; // [0x46] ; surname or title
@@ -387,7 +399,7 @@ namespace Zeal
 			/* 0x0D5C */ BYTE Unknown0D5C[20];
 			/* 0x0D70 */ DWORD ZoneId;
 			/* 0x0D74 */ struct _EQSPAWNINFO* SpawnInfo;
-			/* 0x0D78 */ struct _EQITEMINFO* CursorItem;
+			/* 0x0D78 */  _EQITEMINFO* CursorItem;
 			union
 			{
 				/* 0x0D7C */ struct _EQINVENTORY Inventory;
@@ -447,6 +459,11 @@ namespace Zeal
 
 		struct Entity
 		{
+			void ChangeStance(BYTE new_stance)
+			{
+				if (this && this->StandingState != new_stance)
+					reinterpret_cast<void(__thiscall*)(Entity*, unsigned char)>(0x50be3c)(this, new_stance);
+			}
 			/* 0x0000 */ BYTE Unknown0000; // always equals 0x03
 			/* 0x0001 */ CHAR Name[30]; // [0x1E]
 			/* 0x001F */ BYTE Unknown001F[37];

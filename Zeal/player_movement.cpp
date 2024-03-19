@@ -1,10 +1,11 @@
 #include "player_movement.h"
 #include "Zeal.h"
 #include "EqAddresses.h"
+#include "StringUtil.h"
 
 static void CloseSpellbook(void)
 {
-	Zeal::EqGame::change_stance(Stance::Stand);
+	Zeal::EqGame::get_self()->ChangeStance(Stance::Stand);
 	Zeal::EqGame::Windows->SpellBook->IsVisible = false;
 }
 
@@ -14,6 +15,7 @@ void PlayerMovement::handle_movement_binds(int cmd, bool key_down)
 	{
 		if (!Zeal::EqGame::KeyMods->Alt && !Zeal::EqGame::KeyMods->Shift && !Zeal::EqGame::KeyMods->Ctrl)
 		{
+
 			if (Zeal::EqGame::is_new_ui())
 			{
 				if (Zeal::EqGame::Windows->Loot && Zeal::EqGame::Windows->Loot->IsOpen && Zeal::EqGame::Windows->Loot->IsVisible)
@@ -28,19 +30,19 @@ void PlayerMovement::handle_movement_binds(int cmd, bool key_down)
 							CloseSpellbook();
 							break;
 						case 5: // default should be turn page left (not implemented)
-							if (!spellbook_left_autostand)
-								return;
-							else
-								CloseSpellbook();
+							if (!spellbook_right_autostand) { return; }
+							CloseSpellbook();
 							break;
 						case 6: // default to turn page right (not implemented)
-							if (!spellbook_right_autostand)
-								return;
-							else
-								CloseSpellbook();
+							if (!spellbook_left_autostand) { return; }
+							CloseSpellbook();
 							break;
 						case 211:
+							if (!spellbook_left_strafe_autostand) { return; }
+							CloseSpellbook();
+							break;
 						case 212:
+							if (!spellbook_right_strafe_autostand) { return; }
 							CloseSpellbook();
 							break;
 						default: { return; }
@@ -64,11 +66,10 @@ void PlayerMovement::handle_movement_binds(int cmd, bool key_down)
 				}
 			}
 
-			// not in a window, handle things normally. (why did this check get removed?)
-			switch (Zeal::EqGame::get_self()->StandingState)
+			switch (Zeal::EqGame::get_controlled()->StandingState)
 			{
 				case Zeal::EqEnums::Stance::Sitting:
-					Zeal::EqGame::change_stance(Stance::Stand);
+					Zeal::EqGame::get_controlled()->ChangeStance(Stance::Stand);
 					break;
 				default: { return; }
 			}
@@ -108,7 +109,7 @@ void PlayerMovement::handle_spellcast_binds(int cmd)
 		switch (Zeal::EqGame::get_self()->StandingState)
 		{
 			case Zeal::EqEnums::Stance::Sitting:
-				Zeal::EqGame::change_stance(Stance::Stand);
+				Zeal::EqGame::get_self()->ChangeStance(Stance::Stand);
 				break;
 			default: { return; }
 		}
@@ -173,21 +174,29 @@ void PlayerMovement::callback_main()
 	}
 }
 
-void PlayerMovement::load_settings(IO_ini* ini)
+void PlayerMovement::load_settings()
 {
-	if (!ini->exists("Zeal", "LeftTurnSpellbookAutostand"))
-		ini->setValue<bool>("Zeal", "LeftTurnSpellbookAutostand", false);
-	if (!ini->exists("Zeal", "RightTurnSpellbookAutostand"))
-		ini->setValue<bool>("Zeal", "RightTurnSpellbookAutostand", false);
+	if (!ini_handle->exists("Zeal", "LeftTurnSpellbookAutostand"))
+		ini_handle->setValue<bool>("Zeal", "LeftTurnSpellbookAutostand", false);
+	if (!ini_handle->exists("Zeal", "RightTurnSpellbookAutostand"))
+		ini_handle->setValue<bool>("Zeal", "RightTurnSpellbookAutostand", false);
+	if (!ini_handle->exists("Zeal", "LeftStrafeSpellbookAutostand"))
+		ini_handle->setValue<bool>("Zeal", "LeftStrafeSpellbookAutostand", true);
+	if (!ini_handle->exists("Zeal", "RightStrafeSpellbookAutostand"))
+		ini_handle->setValue<bool>("Zeal", "RightStrafeSpellbookAutostand", true);
 
-	spellbook_left_autostand = ini->getValue<bool>("Zeal", "LeftTurnSpellbookAutostand");
-	spellbook_right_autostand = ini->getValue<bool>("Zeal", "RightTurnSpellbookAutostand");
+	spellbook_left_autostand = ini_handle->getValue<bool>("Zeal", "LeftTurnSpellbookAutostand");
+	spellbook_right_autostand = ini_handle->getValue<bool>("Zeal", "RightTurnSpellbookAutostand");
+	spellbook_left_strafe_autostand = ini_handle->getValue<bool>("Zeal", "LeftStrafeSpellbookAutostand");
+	spellbook_right_strafe_autostand = ini_handle->getValue<bool>("Zeal", "RightStrafeSpellbookAutostand");
 }
 
 PlayerMovement::PlayerMovement(ZealService* zeal, class Binds* binds, class IO_ini* ini)
 {
-	load_settings(ini);
+	ini_handle = ini;
+	load_settings();
 
+	// ISSUE: Mapping LEFT/RIGHT arrow keys to strafe on TAKP2.1 client fails to function.
 	binds->replace_bind(211, [this](int state) {
 		if (!state && current_strafe == strafe_direction::Left)
 		{
@@ -213,5 +222,54 @@ PlayerMovement::PlayerMovement(ZealService* zeal, class Binds* binds, class IO_i
 		return false;
 	}); // strafe right
 
+	zeal->commands_hook->add("/autostand", {},
+		[this](std::vector<std::string>& args) {
+			if (args.size() == 1 || args.size() > 2)
+			{
+				Zeal::EqGame::print_chat("usage: /autostand [LeftTurn | RightTurn | LeftStrafe | RightStrafe]");
+				return true;
+			}
+			if (args.size() > 1) {
+				std::ostringstream oss;
+				if (StringUtil::caseInsensitive(args[1], "LeftTurn"))
+				{
+					spellbook_left_autostand = !spellbook_left_autostand;
+					ini_handle->setValue<bool>("Zeal", "LeftTurnSpellbookAutostand", spellbook_left_autostand);
+					std::string is_enabled = spellbook_left_autostand ? "enabled" : "disabled";
+					oss << "[Autostand] Left turn spellbook autostand has been " << is_enabled << "." << std::endl;
+					Zeal::EqGame::print_chat(oss.str());
+					return true;
+				}
+				else if (StringUtil::caseInsensitive(args[1], "RightTurn"))
+				{
+					spellbook_right_autostand = !spellbook_right_autostand;
+					ini_handle->setValue<bool>("Zeal", "RightTurnSpellbookAutostand", spellbook_right_autostand);
+					std::string is_enabled = spellbook_right_autostand ? "enabled" : "disabled";
+					oss << "[Autostand] Right turn spellbook autostand has been " << is_enabled << "." << std::endl;
+					Zeal::EqGame::print_chat(oss.str());
+					return true;
+				}
+				else if (StringUtil::caseInsensitive(args[1], "LeftStrafe"))
+				{
+					spellbook_left_strafe_autostand = !spellbook_left_strafe_autostand;
+					ini_handle->setValue<bool>("Zeal", "LeftStrafeSpellbookAutostand", spellbook_left_strafe_autostand);
+					std::string is_enabled = spellbook_left_strafe_autostand ? "enabled" : "disabled";
+					oss << "[Autostand] Left strafe spellbook autostand has been " << is_enabled << "." << std::endl;
+					Zeal::EqGame::print_chat(oss.str());
+					return true;
+				}
+				else if (StringUtil::caseInsensitive(args[1], "RightStrafe"))
+				{
+					spellbook_right_strafe_autostand = !spellbook_right_strafe_autostand;
+					ini_handle->setValue<bool>("Zeal", "RightStrafeSpellbookAutostand", spellbook_right_strafe_autostand);
+					std::string is_enabled = spellbook_right_strafe_autostand ? "enabled" : "disabled";
+					oss << "[Autostand] Right strafe spellbook autostand has been " << is_enabled << "." << std::endl;
+					Zeal::EqGame::print_chat(oss.str());
+					return true;
+				}
+			}
+			return false;
+		}
+	);
 	zeal->main_loop_hook->add_callback([this]() { callback_main(); }, callback_fn::MainLoop);
 }

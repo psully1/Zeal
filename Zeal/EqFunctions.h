@@ -48,7 +48,6 @@ namespace Zeal
 			static mem::function<short __fastcall(int, int)> get_max_mana = 0x4B9483;
 			static mem::function<short __fastcall(int, int)> get_cur_mana = 0x4b9450;
 			static mem::function<int __cdecl(int, Vec3*)> t3dGetRegionNumberFromWorldAndXYZ = 0x0;
-			static mem::function<short __fastcall(Zeal::EqStructures::Entity*,int unused, unsigned char)> change_stance = 0x50be3c;
 			static mem::function<void __fastcall(DWORD, int unused, DWORD)> ui_something = 0x536bae;
 			static mem::function<float __stdcall(float input_heading)> fix_heading = 0x4a2eed;
 			static mem::function<void __stdcall()> ProcessMouseEvent = 0x525db4;
@@ -59,7 +58,7 @@ namespace Zeal
 			static mem::function<int __cdecl(Zeal::EqUI::CXSTR*, const char* format)> CXStr_PrintString = 0x578110;
 			static mem::function<int __stdcall()> LoadOptions = 0x536CE0;
 			static mem::function<int __fastcall(int t, int unk, int key, int type)> readKeyMapFromIni = 0x525520;
-			static mem::function<void __cdecl(int _char, int item, int)> auto_inventory = 0x4F0EEB;
+			static mem::function<void __cdecl(Zeal::EqStructures::EQCHARINFO* _char, Zeal::EqStructures::_EQITEMINFO** Item, int)> auto_inventory = 0x4F0EEB;
 			static mem::function<int __cdecl()> UI_ChatInputCheck = 0x54042d;
 			static mem::function<int __cdecl(Zeal::EqStructures::Entity*, const char*)> do_say = 0x4f8172;
 			static mem::function<float __fastcall(int, int)> encum_factor = 0x4bb9c7;
@@ -106,6 +105,7 @@ namespace Zeal
 		void print_chat_zeal(const char* data, short color, bool un);
 		void set_target(Zeal::EqStructures::Entity* target);
 		bool can_move();
+		Zeal::EqStructures::EQCHARINFO* get_char_info();
 		Zeal::EqStructures::Entity* get_active_corpse();
 		Zeal::EqStructures::Entity* get_target();
 		Zeal::EqStructures::Entity* get_entity_list();
@@ -124,7 +124,6 @@ namespace Zeal
 		bool is_game_ui_window_hovered();
 		bool is_targetable(Zeal::EqStructures::Entity* ent);
 		bool is_in_game();
-		void change_stance(Stance new_stance);
 		void do_say(bool hide_local, const char* format, ...);
 		void do_say(bool hide_local, std::string data);
 		int get_region_from_pos(Vec3* pos);
