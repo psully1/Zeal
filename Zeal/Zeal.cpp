@@ -15,6 +15,7 @@ ZealService::ZealService()
 	raid_hook = std::shared_ptr<raid>(new raid(this));
 	eqstr_hook = std::shared_ptr<eqstr>(new eqstr(this));
 	spell_sets = std::shared_ptr<SpellSets>(new SpellSets(this));
+	item_displays = std::shared_ptr<ItemDisplay>(new ItemDisplay(this, ini.get()));
 	this->apply_patches();
 
 	camera_mods = std::shared_ptr<CameraMods>(new CameraMods(this, ini.get()));
@@ -26,7 +27,7 @@ ZealService::ZealService()
 	movement = std::shared_ptr<PlayerMovement>(new PlayerMovement(this, binds_hook.get(), ini.get()));
 	alarm = std::shared_ptr<Alarm>(new Alarm(this));
 	netstat = std::shared_ptr<Netstat>(new Netstat(this, ini.get()));
-	
+	ui = std::shared_ptr<UIOptions>(new UIOptions(this, ini.get()));
 
 	binds_hook->replace_bind(3, [this](int state) {
 		movement->handle_movement_binds(3, state);

@@ -19,6 +19,7 @@ public:
 	std::shared_ptr<eqstr> eqstr_hook = nullptr;
 	std::shared_ptr<chat> chat_hook = nullptr;
 	std::shared_ptr<SpellSets> spell_sets = nullptr;
+	std::shared_ptr<ItemDisplay> item_displays = nullptr;
 
 
 	//other features
@@ -29,6 +30,7 @@ public:
 	std::shared_ptr<PlayerMovement> movement = nullptr;
 	std::shared_ptr<Alarm> alarm = nullptr;
 	std::shared_ptr<Netstat> netstat = nullptr;
+	std::shared_ptr<UIOptions> ui = nullptr;
 	
 	
 

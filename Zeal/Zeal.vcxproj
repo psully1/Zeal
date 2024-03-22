@@ -94,7 +94,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>Level2</WarningLevel>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
@@ -154,6 +154,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="alarm.h" />
+    <ClInclude Include="item_display.h" />
     <ClInclude Include="player_movement.h" />
     <ClInclude Include="binds.h" />
     <ClInclude Include="buff_timers.h" />
@@ -185,11 +186,13 @@
     <ClInclude Include="SpellCategories.h" />
     <ClInclude Include="spellsets.h" />
     <ClInclude Include="StringUtil.h" />
+    <ClInclude Include="UIOptions.h" />
     <ClInclude Include="vectors.h" />
     <ClInclude Include="Zeal.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="alarm.cpp" />
+    <ClCompile Include="item_display.cpp" />
     <ClCompile Include="player_movement.cpp" />
     <ClCompile Include="binds.cpp" />
     <ClCompile Include="buff_timers.cpp" />
@@ -213,6 +216,7 @@
     <ClCompile Include="raid.cpp" />
     <ClCompile Include="spellsets.cpp" />
     <ClCompile Include="StringUtil.cpp" />
+    <ClCompile Include="UIOptions.cpp" />
     <ClCompile Include="vectors.cpp" />
     <ClCompile Include="Zeal.cpp" />
   </ItemGroup>

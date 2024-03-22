@@ -144,6 +144,12 @@
     <ClInclude Include="netstat.h">
       <Filter>Header Files\other</Filter>
     </ClInclude>
+    <ClInclude Include="UIOptions.h">
+      <Filter>Header Files\other</Filter>
+    </ClInclude>
+    <ClInclude Include="item_display.h">
+      <Filter>Header Files\hooks</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -223,6 +229,12 @@
     </ClCompile>
     <ClCompile Include="netstat.cpp">
       <Filter>Source Files\other</Filter>
+    </ClCompile>
+    <ClCompile Include="UIOptions.cpp">
+      <Filter>Source Files\other</Filter>
+    </ClCompile>
+    <ClCompile Include="item_display.cpp">
+      <Filter>Source Files\hooks</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
