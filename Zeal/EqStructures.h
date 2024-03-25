@@ -348,6 +348,14 @@ namespace Zeal
 			{
 				return reinterpret_cast<short(__thiscall*)(EQCHARINFO*)>(0x4b9450)(this);
 			}
+			int cast(UINT gem, short spell_id, int* item, short un)
+			{
+				return reinterpret_cast<int(__thiscall*)(EQCHARINFO*, UINT, short, int*, short)>(0x4c483b)(this, gem, spell_id, item, un);
+			}
+			void stop_cast(UINT reason, short spell_id)
+			{
+				return reinterpret_cast<void(__thiscall*)(EQCHARINFO*, UINT, short)>(0x4cb510)(this, reason, spell_id);
+			}
 			/* 0x0000 */ BYTE Unknown0000[2];
 			/* 0x0002 */ CHAR Name[64]; // [0x40]
 			/* 0x0042 */ CHAR LastName[70]; // [0x46] ; surname or title
@@ -373,13 +381,11 @@ namespace Zeal
 			/* 0x0264 */ _EQBUFFINFO Buff[EQ_NUM_BUFFS];
 			/* 0x02FA */ BYTE Unknown02FA[1080];
 			/* 0x0732 */ WORD SpellBook[EQ_NUM_SPELL_BOOK_SPELLS];
-			/* 0x0B32 */ WORD MemorizedSpell[EQ_NUM_SPELL_GEMS]; // spell gem spell ids
+			/* 0x0B32 */ SHORT MemorizedSpell[EQ_NUM_SPELL_GEMS]; // spell gem spell ids
 			/* 0x0B42 */ BYTE Unknown0B42[14];
 			/* 0x0B50 */ WORD Unknown0B50;
 			/* 0x0B52 */ WORD Unknown0B52;
-			/* 0x0B54 */ FLOAT ZoneEnterY;
-			/* 0x0B58 */ FLOAT ZoneEnterX;
-			/* 0x0B5C */ FLOAT ZoneEnterZ;
+			/* 0x0B54 */ Vec3 ZoneEnter;
 			/* 0x0B60 */ FLOAT Unknown0060;
 			/* 0x0B64 */ BYTE StandingState; // EQ_STANDING_STATE_x
 			/* 0x0B65 */ BYTE Unknown0B65[3];
@@ -483,10 +489,7 @@ namespace Zeal
 			/* 0x0001 */ CHAR Name[30]; // [0x1E]
 			/* 0x001F */ BYTE Unknown001F[37];
 			/* 0x0044 */ DWORD ZoneId; // EQ_ZONE_ID_x
-			Vec3 Position;
-			///* 0x0048 */ FLOAT Y;
-			///* 0x004C */ FLOAT X;
-			///* 0x0050 */ FLOAT Z;
+			/* 0x0048 */ Vec3 Position;
 			/* 0x0054 */ FLOAT Heading; // camera view left/right, yaw
 			/* 0x0058 */ FLOAT Unk;
 			/* 0x005C */ FLOAT MovementSpeed;
