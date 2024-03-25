@@ -7,7 +7,7 @@ class CameraMods
 {
 public:
 	std::chrono::steady_clock::time_point prevTime;
-	const float max_zoom_out = 400;
+	const float max_zoom_out = 1800;
 	float user_sensitivity_x = 0.1f;
 	float user_sensitivity_y = 0.1f;
 	float user_sensitivity_x_3rd = 0.1f;
