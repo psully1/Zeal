@@ -5,7 +5,10 @@ namespace Zeal
 {
 	namespace EqGame
 	{
-
+		char* get_string(UINT id)
+		{
+			return reinterpret_cast<char* (__thiscall*)(int t, UINT id, bool*)>(0x550EFE)(*(int*)0x7f9490, id, nullptr);
+		}
 		float heading_to_yaw(float heading)
 		{
 			float y = 512 - heading;
@@ -109,6 +112,14 @@ namespace Zeal
 		Zeal::EqStructures::Entity* get_view_actor_entity()
 		{
 			return get_view_actor()->Entity;
+		}
+		char* strip_name(char* name)
+		{
+			return reinterpret_cast<char*(__thiscall*)(int everquest, char* name)>(0x537e4b)(*(int*)0x809478, name);
+		}
+		void send_message(UINT opcode, int* buffer, UINT size, int unknown)
+		{
+			reinterpret_cast<void(__cdecl*)(int* connection, UINT opcode, int* buffer, UINT size, int unknown)>(0x54e51a)((int*)0x7952fc, opcode, buffer, size, unknown);
 		}
 
 		bool is_view_actor_me()
@@ -350,7 +361,7 @@ namespace Zeal
 		{
 			std::vector<std::string> vd = splitStringByNewLine(data);
 			for (auto& d : vd)
-				EqGameInternal::print_chat(*(int*)0x809478, 0, d.c_str(), 0, false);
+				EqGameInternal::print_chat(*(int*)0x809478, 0, d.c_str(), 0, true);
 		}
 		void print_chat(const char* format, ...)
 		{
@@ -360,7 +371,18 @@ namespace Zeal
 			//printf()
 			vsnprintf(buffer, 511, format, argptr);
 			va_end(argptr);
-			EqGameInternal::print_chat(*(int*)0x809478, 0, buffer, 0, false);
+			EqGameInternal::print_chat(*(int*)0x809478, 0, buffer, 0, true);
+
+		}
+		void print_chat(short color, const char* format, ...)
+		{
+			va_list argptr;
+			char buffer[512];
+			va_start(argptr, format);
+			//printf()
+			vsnprintf(buffer, 511, format, argptr);
+			va_end(argptr);
+			EqGameInternal::print_chat(*(int*)0x809478, 0, buffer, color, true);
 
 		}
 		void print_chat_zeal(const char* data, short color, bool un)
@@ -368,6 +390,28 @@ namespace Zeal
 			std::string msg = "[ZEAL] " + std::string(data);
 
 			EqGameInternal::print_chat(*(int*)0x809478, 0, msg.c_str(), color, un);
+		}
+		int get_gamestate()
+		{
+			if (get_eq())
+				return get_eq()->game_state;
+			return -1;
+		}
+		EqStructures::Everquest* get_eq()
+		{
+			return *(EqStructures::Everquest**)0x809478;
+		}
+		void do_inspect(Zeal::EqStructures::Entity* player)
+		{
+			reinterpret_cast<void(__thiscall*)(EqStructures::Everquest*, Zeal::EqStructures::Entity*)>(0x54390E)(get_eq(), player);
+		}
+		void pet_command(int cmd, short spawn_id)
+		{
+			reinterpret_cast<void(__thiscall*)(EqStructures::Everquest*, int, short)>(0x547749)(get_eq(), cmd, spawn_id);
+		}
+		void execute_cmd(UINT cmd, bool isdown, int unk2)
+		{
+			reinterpret_cast<void(__cdecl*)(UINT, bool, int)>(0x54050c)(cmd, isdown, unk2);
 		}
 		std::string generateTimestamp() {
 			time_t rawtime;
@@ -389,6 +433,8 @@ namespace Zeal
 		}
 		void set_target(Zeal::EqStructures::Entity* target)
 		{
+			if (!target)
+				print_chat(get_string(0x3057)); //you no longer have a target
 			*(Zeal::EqStructures::Entity**)Zeal::EqGame::Target = target;
 		}
 		Zeal::EqStructures::Entity* get_entity_list()
@@ -605,7 +651,10 @@ namespace Zeal
 		}
 		bool is_in_game()
 		{
-			return *Zeal::EqGame::in_game;
+			if (get_gamestate() != -1)
+				return get_gamestate() == GAMESTATE_INGAME;
+			else
+				return false;
 		}
 		bool is_new_ui()
 		{

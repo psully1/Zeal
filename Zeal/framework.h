@@ -15,7 +15,7 @@
 #include "eqstr.h"
 #include "chat.h"
 #include "IO_ini.h"
-#include "main_loop.h"
+#include "callbacks.h"
 #include "item_display.h"
 #include "melody.h"
 // other features
@@ -27,7 +27,7 @@
 #include "spellsets.h"
 #include "alarm.h"
 #include "netstat.h"
-#include "UIOptions.h"
+#include "ui_manager.h"
 
 #include "Zeal.h"
 

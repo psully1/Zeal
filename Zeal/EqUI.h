@@ -75,8 +75,8 @@ namespace Zeal
 			BaseVTable basic;
 			/*0x0FC*/ LPVOID  Unknown1;
 			/*0x100*/ LPVOID  Unknown2;
-			/*0x104*/ LPVOID  Unknown3;
-			/*0x108*/ LPVOID  Activate;
+			/*0x104*/ LPVOID  Activate;
+			/*0x108*/ LPVOID  Unknown3;
 		};
 		struct ContextMenuVTable
 		{
@@ -175,6 +175,10 @@ namespace Zeal
 			BasicWnd* GetChildItem(CXSTR name)
 			{
 				return reinterpret_cast<BasicWnd*(__thiscall*)(const BasicWnd*, CXSTR)>(0x570320)(this, name);
+			}
+			int WndNotification(int a1, int a2, int a3)
+			{
+				return reinterpret_cast<int(__thiscall*)(const BasicWnd*, int,int,int)>(vtbl->WndNotification)(this, a1, a2, a3);
 			}
 
 			/* 0x0000 */ BaseVTable* vtbl;
@@ -290,6 +294,10 @@ namespace Zeal
 			{
 				reinterpret_cast<void(__thiscall*)(const ItemDisplayWnd*)>(0x423606)(this);
 			}
+			void Unk3()
+			{
+				reinterpret_cast<void(__thiscall*)(const ItemDisplayWnd*)>(0x423606)(this);
+			}
 			void SetItem(struct Zeal::EqStructures::_EQITEMINFO* Item, bool unk)
 			{
 				reinterpret_cast<void(__thiscall*)(const ItemDisplayWnd*, struct Zeal::EqStructures::_EQITEMINFO *, bool)>(0x423640)(this, Item, unk);
@@ -310,10 +318,32 @@ namespace Zeal
 			//BYTE Filler[0xEC];
 
 		};
+		struct SliderWnd : EQWND
+		{
+			SliderWnd() {};
+			void SetupCustomVTable()
+			{
+				BaseVTable* newtbl = new BaseVTable();
+				mem::copy((int)newtbl, (int)vtbl, sizeof(BaseVTable));
+				vtbl = (BaseVTable*)newtbl;
+				mem::unprotect_memory(vtbl, sizeof(BaseVTable));
 
+			}
+			/* 0x0134 */ int current_val;
+			/* 0x0138 */ BYTE Unknown0138[4];
+			/* 0x013C */ int max_val; 
+			/* 0x0140 */ int val3;
+			/* 0x0144 */ BYTE Unknown0144[0xC]; // the item name is the title text
+		};
 
 		struct LootWnd : public EQWND
 		{
+			void RequestLootSlot(UINT slot, BYTE inventory)
+			{
+				reinterpret_cast<void(__thiscall*)(const LootWnd*, UINT, bool)>(0x426b02)(this, slot, inventory);
+			}
+
+			
 			/* 0x0134 */ DWORD Unk1;
 			/* 0x0138 */ DWORD ItemSlotIndex[EQ_NUM_LOOT_WINDOW_ITEMS];
 			/* 0x01B0 */ DWORD Timer;
@@ -338,6 +368,10 @@ namespace Zeal
 			void SetText(CXSTR data)
 			{
 				reinterpret_cast<void(__thiscall*)(const EditWnd*, CXSTR)>(0x5a3d00)(this, data);
+			}
+			void AddItemTag(int item_id, const char* name)
+			{
+				reinterpret_cast<void(__thiscall*)(const EditWnd*, int, const char*)>(0x5a2920)(this, item_id, name);
 			}
 			/* 0x0114 */ DWORD LinkStartIndex[10]; 
 			/* 0x013C */ DWORD LinkEndIndex[10];

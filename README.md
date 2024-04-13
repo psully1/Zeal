@@ -6,6 +6,20 @@
 - Add free for all for raid loot, requires ui change or /setloottype 4
 ### Commands
 ___
+- `/inspect target`
+  - **Description:** adds target argument to /inspect, this just inspects your current target.
+
+- `/loc noprint`
+  - **Description:** adds noprint argument to /loc, this just sends loc directly to your log.
+
+- `/reloadskin`
+  - **Description:** reloads your current skin using ini.
+    
+- `/fov`
+  - **Arguments:** `int`
+  - **Example:** `/fov 65`
+  - **Description:** changes your field of view.
+    
 - `/melody`
   - **Arguments:** `song gem #'s (maximum of 5)`
   - **Example:** `/melody 1 4 2 3`
@@ -49,6 +63,14 @@ ___
   - **Aliases:** `/autoinv`, `/ai`
   - **Description:** Drops whatever is on your cursor into your inventory.
 
+- `/autobank`
+  - **Aliases:** `/autoba`, `/ab`
+  - **Description:** Drops whatever is on your cursor into your bank. [requires you to be at a banker] (not fully functional atm)
+
+- `/target`
+  - **Aliases:** `/cleartarget`
+  - **Description:** acts as normal /target unless you provide no argument in which case it will clear your target.
+
 - `/sit`
   - **Description:** The /sit command now accepts "on" as an argument. Using "/sit on" will always make you sit, even if you are currently sitting. This matches the game's native "/sit off" which always makes you stand even if you are currently standing. The "/sit" command will continue to toggle sit/stand state if no argument is provided or if the argument provided is not on or off. Additionally, "/sit down" now works as well and will always make you sit, even if already sitting.
 
@@ -83,9 +105,6 @@ ___
 - `/bluecon`
   - **Description:** Changes the blue con color to usercolor #70 which is otherwise unused, you can edit in the options window.
 
-- `/zealinput`
-  - **Description:** toggles zealinput for input boxes in game (chat windows ect) which gives it a more modern feel with keyboard binds including copy and paste.
-
 - `/alarm`
   - **Arguments:** `oldui`
   - **Description:** Re-opens the alarm window, if oldui is specified it allows for an alarm on it.
@@ -98,6 +117,12 @@ ___
 - Auto Inventory
 - Toggle last 2 targets
 - Reply target
+- Pet Attack
+- Pet Guard
+- Pet Follow
+- Pet Back
+- Slow turn left
+- Slow turn right
 ___
 ### UI
 - **Gauge EqType's**
@@ -108,6 +133,30 @@ ___
   - `81` Exp Per Hour Percentage
   - `124` Current Mana
   - `125` Max Mana
+  - `134` Spell being casted
+  
+### Options UI 
+- **ScreenID Checkboxes**
+  - Zeal_ShowHelm
+  - Zeal_HideCorpse
+  - Zeal_Cam
+  - Zeal_BlueCon
+  - Zeal_Timestamp
+  - Zeal_Input
+    
+- **ScreenID Sliders**
+  - Zeal_PanDelaySlider
+  - Zeal_FirstPersonSlider_X
+  - Zeal_FirstPersonSlider_Y
+  - Zeal_ThirdPersonSlider_X
+  - Zeal_ThirdPersonSlider_Y
+    
+- **ScreenID Labels**
+  - Zeal_ThirdPersonLabel_X
+  - Zeal_ThirdPersonLabel_Y
+  - Zeal_FirstPersonLabel_X
+  - Zeal_FirstPersonLabel_Y
+  - Zeal_PanDelayLabel
 ___
 ### Building and Installation
 <br>

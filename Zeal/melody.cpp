@@ -13,7 +13,7 @@ void Melody::start()
     {
         current_index = -1;
         active = true;
-        Zeal::EqGame::print_chat("You begin playing a melody.");
+        Zeal::EqGame::print_chat(USERCOLOR_SPELLS, "You begin playing a melody.");
     }
 }
 void Melody::end()
@@ -23,7 +23,7 @@ void Melody::end()
         current_index = 0;
         active = false;
         songs.clear();
-        Zeal::EqGame::print_chat("Your melody has ended.");
+        Zeal::EqGame::print_chat(USERCOLOR_SPELL_FAILURE, "Your melody has ended.");
     }
 }
 
@@ -35,6 +35,7 @@ void __fastcall StopCast(int t, int u, BYTE reason, short spell_id)
         ZealService::get_instance()->melody->current_index--;
     ZealService::get_instance()->hooks->hook_map["StopCast"]->original(StopCast)(t, u, reason, spell_id);
 }
+
 void Melody::stop_cast()
 {
     if (current_index>=0)
@@ -48,7 +49,7 @@ void Melody::tick()
         end();
         return;
     }
-    if (active && Zeal::EqGame::get_char_info())
+    if (active && Zeal::EqGame::get_char_info() && songs.size()>0)
     {
         Zeal::EqStructures::Entity* self = Zeal::EqGame::get_self();
         static ULONGLONG casting_timestamp = GetTickCount64();
@@ -60,26 +61,37 @@ void Melody::tick()
             if (self->StandingState != Stance::Stand)
                 return;
 
-            stop_cast();
             current_index++;
-            if (current_index >= songs.size())
+            if (current_index >= songs.size() || current_index<0)
                 current_index = 0;
-
             int current_gem = songs[current_index];
-            if (Zeal::EqGame::get_char_info()->MemorizedSpell[current_gem] != -1)
+            if (current_gem < 0 || current_gem>7)
+                end();
+            if (Zeal::EqGame::get_char_info()->MemorizedSpell[current_gem] != -1 )
+            {
+                if (!Zeal::EqGame::get_eq()->IsOkToTransact())
+                {
+                    Zeal::EqGame::print_chat(USERCOLOR_SPELL_FAILURE, "You are too distracted to keep a melody!");
+                    end();
+                    return;
+                }
+                if (Zeal::EqGame::get_spell_mgr()->Spells[Zeal::EqGame::get_char_info()->MemorizedSpell[current_gem]]->TargetType == 5 && !Zeal::EqGame::get_target())
+                    return;
+
+                if (Zeal::EqGame::get_self() && Zeal::EqGame::get_self()->ActorInfo && Zeal::EqGame::get_self()->ActorInfo->CastingSpellGemNumber==255)
+                    stop_cast();
                 Zeal::EqGame::get_char_info()->cast(current_gem, Zeal::EqGame::get_char_info()->MemorizedSpell[current_gem], 0, 0);
+            }
         }
         else if (Zeal::EqGame::Windows->Casting->IsVisible)
             casting_timestamp = GetTickCount64();
-
-
     }
-
 }
 
 Melody::Melody(ZealService* zeal, IO_ini* ini)
 {
-    zeal->main_loop_hook->add_callback([this]() { tick();  });
+    zeal->callbacks->add_generic([this]() { tick();  });
+    zeal->callbacks->add_generic([this]() { end(); }, callback_type::CharacterSelect);
     zeal->hooks->Add("StopCast", 0x4cb510, StopCast, hook_type_detour); //add extra prints for new loot types
     zeal->commands_hook->add("/melody", { },
         [this](std::vector<std::string>& args) {
@@ -91,14 +103,14 @@ Melody::Melody(ZealService* zeal, IO_ini* ini)
             }
             if (Zeal::EqGame::get_char_info()->Class != 8)
             {
-                Zeal::EqGame::print_chat("Only bards can keep a melody.");
+                Zeal::EqGame::print_chat(USERCOLOR_SPELL_FAILURE, "Only bards can keep a melody.");
                 songs.clear();
                 return true;
             }
 
             if (args.size() > 6)
             {
-                Zeal::EqGame::print_chat("A melody can only consist of 5 songs");
+                Zeal::EqGame::print_chat(USERCOLOR_SPELL_FAILURE, "A melody can only consist of 5 songs.");
                 return true;
             }
 
@@ -115,14 +127,14 @@ Melody::Melody(ZealService* zeal, IO_ini* ini)
                     }
                     else
                     {
-                        Zeal::EqGame::print_chat("Error spell gem %i is empty", current_gem+1);
+                        Zeal::EqGame::print_chat(USERCOLOR_SPELL_FAILURE, "Error spell gem %i is empty", current_gem+1);
                         songs.clear();
                         return true;
                     }
                 }
                 else
                 {
-                    Zeal::EqGame::print_chat("There was an error trying to parse your melody list");
+                    Zeal::EqGame::print_chat(USERCOLOR_SPELL_FAILURE, "There was an error trying to parse your melody list");
                     songs.clear();
                     return true;
                 }

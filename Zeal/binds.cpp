@@ -7,7 +7,7 @@ Binds::~Binds()
 {
 }
 
-void ExecuteCmd(int cmd, int isdown, int unk2)
+bool Binds::execute_cmd(UINT cmd, bool isdown)
 {
 	ZealService* zeal = ZealService::get_instance();
 	if (!Zeal::EqGame::game_wants_input()) //checks if the game wants keyboard input... don't call our binds when the game wants input
@@ -18,18 +18,16 @@ void ExecuteCmd(int cmd, int isdown, int unk2)
 		{
 			for (auto& fn : zeal->binds_hook->ReplacementFunctions[cmd])
 			if (fn(isdown)) //if the replacement function returns true, end here otherwise its really just adding more to the command 
-				return;
+				return true;
 		}
 
 		if (zeal->binds_hook->KeyMapFunctions.count(cmd) > 0)
 			zeal->binds_hook->KeyMapFunctions[cmd](isdown);
 		else
-			zeal->hooks->hook_map["executecmd"]->original(ExecuteCmd)(cmd, isdown, unk2);
+			return false;
 	}
-	else
-	{
-		zeal->hooks->hook_map["executecmd"]->original(ExecuteCmd)(cmd, isdown, unk2);
-	}
+
+	return false;
 }
 
 void __fastcall InitKeyboardAssignments(int t, int unused)
@@ -161,6 +159,71 @@ void Binds::add_binds()
 			Zeal::EqGame::EqGameInternal::ReplyTarget(Zeal::EqGame::get_self(), "");
 		}
 		});
+	add_bind(218, "Pet Attack", "PetAttack", key_category::Commands, [this](int key_down) { //probably need to add a check if you have a pet
+		if (key_down && !Zeal::EqGame::EqGameInternal::UI_ChatInputCheck())
+		{
+			Zeal::EqStructures::Entity* target = Zeal::EqGame::get_target();
+			if (target)
+				Zeal::EqGame::pet_command(Zeal::EqEnums::PetCommand::Attack, target->SpawnId);
+		}
+		});
+	add_bind(219, "Pet Guard", "PetGuard", key_category::Commands, [this](int key_down) {
+		if (key_down && !Zeal::EqGame::EqGameInternal::UI_ChatInputCheck())
+		{
+			Zeal::EqGame::pet_command(Zeal::EqEnums::PetCommand::Guard, 0);
+		}
+		});
+	add_bind(220, "Pet Back", "PetBack", key_category::Commands, [this](int key_down) {
+		if (key_down && !Zeal::EqGame::EqGameInternal::UI_ChatInputCheck())
+		{
+			Zeal::EqGame::pet_command(Zeal::EqEnums::PetCommand::Back, 0);
+		}
+		});
+	add_bind(221, "Pet Follow", "PetFollow", key_category::Commands, [this](int key_down) {
+		if (key_down && !Zeal::EqGame::EqGameInternal::UI_ChatInputCheck())
+		{
+			Zeal::EqGame::pet_command(Zeal::EqEnums::PetCommand::Follow, 0);
+		}
+		});
+	add_bind(222, "Slow Turn Right", "SlowMoveRight", key_category::Movement, [this](int key_down) {
+		if (!Zeal::EqGame::EqGameInternal::UI_ChatInputCheck())
+		{
+			Zeal::EqGame::execute_cmd(5, key_down, 0);
+			if (key_down)
+			{
+				mem::write<BYTE>(0x53fb60, 4);
+				mem::write<BYTE>(0x53fb66, 4);
+			}
+			else
+			{
+				if (*(BYTE*)0x53fb60 != 12)
+				{
+					mem::write<BYTE>(0x53fb60, 12);
+					mem::write<BYTE>(0x53fb66, 12);
+				}
+			}
+			
+		}
+		});
+	add_bind(223, "Slow Turn Left", "SlowMoveLeft", key_category::Movement, [this](int key_down) {
+		if (!Zeal::EqGame::EqGameInternal::UI_ChatInputCheck())
+		{
+			Zeal::EqGame::execute_cmd(6, key_down, 0);
+			if (key_down)
+			{
+				mem::write<BYTE>(0x53f758, 4);
+				mem::write<BYTE>(0x53f75E, 4);
+			}
+			else
+			{
+				if (*(BYTE*)0x53f758 != 12)
+				{
+					mem::write<BYTE>(0x53f758, 12);
+					mem::write<BYTE>(0x53f75E, 12);
+				}
+			}
+		}
+		});
 	add_bind(255, "Auto Inventory", "AutoInventory", key_category::Commands | key_category::Macros, [](int key_down) 
 	{
 		if (key_down)
@@ -185,7 +248,7 @@ void Binds::add_bind(int cmd, const char* name, const char* short_name, int cate
 	KeyMapFunctions[cmd] = callback;
 }
 
-void Binds::replace_bind(int cmd, std::function<bool(int state)> callback)
+void Binds::replace_cmd(int cmd, std::function<bool(int state)> callback)
 {
 	ReplacementFunctions[cmd].push_back(callback);
 }
@@ -202,7 +265,6 @@ void Binds::main_loop()
 
 void Binds::on_zone()
 {
-	Zeal::EqGame::print_chat("zoned");
 	last_targets.first = 0;
 	last_targets.second = 0;
 }
@@ -210,8 +272,9 @@ void Binds::on_zone()
 
 Binds::Binds(ZealService* zeal)
 {
-	zeal->main_loop_hook->add_callback([this]() { main_loop(); }, callback_fn::MainLoop);
-	zeal->main_loop_hook->add_callback([this]() { on_zone(); }, callback_fn::Zone);
+	zeal->callbacks->add_generic([this]() { main_loop(); }, callback_type::MainLoop);
+	zeal->callbacks->add_generic([this]() { on_zone(); }, callback_type::Zone);
+	zeal->callbacks->add_command([this](UINT opcode, bool state) { return execute_cmd(opcode, state); }, callback_type::ExecuteCmd);
 	for (int i = 0; i < 128; i++)
 		KeyMapNames[i] = *(char**)(0x611220 + (i * 4)); //copy the original short names to the new array
 	mem::write(0x52507A, (int)KeyMapNames);//write ini keymap
@@ -221,5 +284,5 @@ Binds::Binds(ZealService* zeal)
 	mem::write(0x52485A, (int)256); //increase this for loop to look through all 256
 	mem::write(0x52591C, (int)(Zeal::EqGame::ptr_AlternateKeyMap + (256 * 4))); //fix another for loop to loop through all 256
 	zeal->hooks->Add("initbinds", Zeal::EqGame::EqGameInternal::fn_initkeyboardassignments, InitKeyboardAssignments, hook_type_detour);
-	zeal->hooks->Add("executecmd", Zeal::EqGame::EqGameInternal::fn_executecmd, ExecuteCmd, hook_type_detour);
+	
 }

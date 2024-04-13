@@ -3,6 +3,7 @@
 #include "EqAddresses.h"
 #include "EqFunctions.h"
 #include "Zeal.h"
+#include "StringUtil.h"
 #include <algorithm>
 
 std::string ReadFromClipboard() {
@@ -79,14 +80,10 @@ void __fastcall PrintChat(int t, int unused, const char* data, short color_index
     if (c->timestamps && strlen(data) > 0) //remove phantom prints (the game also checks this, no idea why they are sending blank data in here sometimes
     {
         mem::write<byte>(0x5380C9, 0xEB); // don't log information so we can manipulate data before between chat and logs
-        ZealService::get_instance()->hooks->hook_map["PrintChat"]->original(PrintChat)(t, unused, generateTimestampedString(data).c_str(), color_index, u);
+        ZealService::get_instance()->hooks->hook_map["PrintChat"]->original(PrintChat)(t, unused, generateTimestampedString(data).c_str(), color_index, false);
         mem::write<byte>(0x5380C9, 0x75); //reset the logging
-
-        mem::write<byte>(0x53805B, 0xEB); //disable print chat for NewUI
-        mem::write<byte>(0x538090, 0xEB); //disable print chat for OldUI
-        ZealService::get_instance()->hooks->hook_map["PrintChat"]->original(PrintChat)(t, unused, data, color_index, u);
-        mem::write<byte>(0x538090, 0x74); //reset print chat for OldUI
-        mem::write<byte>(0x53805B, 0x74); //reset print chat for NewUI
+        if (u)
+            reinterpret_cast<void(__cdecl*)( const char* data)>(0x5240dc)(data); //add to log
     }
     else
         ZealService::get_instance()->hooks->hook_map["PrintChat"]->original(PrintChat)(t, unused, data, color_index, u);
@@ -285,7 +282,6 @@ void chat::set_input_color(Zeal::EqUI::ARGBCOLOR col)
         active_edit->TextColor = col; */
 }
 
-
 chat::chat(ZealService* zeal, IO_ini* ini)
 {
     zeal->commands_hook->add("/timestamp", { "/tms" },
@@ -303,6 +299,18 @@ chat::chat(ZealService* zeal, IO_ini* ini)
             set_bluecon(!bluecon);
             return true; //return true to stop the game from processing any further on this command, false if you want to just add features to an existing cmd
         });
+    zeal->commands_hook->add("/loc", { },
+        [this](std::vector<std::string>& args) {
+            if (args.size() > 1 && args[1]=="noprint")
+            {
+                std::stringstream ss;
+                ss << "Your Location is " << std::fixed << std::setprecision(2) << std::ceil(Zeal::EqGame::get_self()->Position.x * 100) / 100 << ", " << std::ceil(Zeal::EqGame::get_self()->Position.y * 100) / 100 << ", " << std::ceil(Zeal::EqGame::get_self()->Position.z * 100) / 100;
+                //Zeal::EqGame::print_chat(ss.str().c_str());
+                reinterpret_cast<void(__cdecl*)(const char* data)>(0x5240dc)(ss.str().c_str());
+                return true;
+            }
+            return false; //return true to stop the game from processing any further on this command, false if you want to just add features to an existing cmd
+        });
     LoadSettings(ini);
 
     zeal->hooks->Add("PrintChat", 0x537f99, PrintChat, hook_type_detour); //add extra prints for new loot types
@@ -317,6 +325,7 @@ void chat::set_input(bool val)
         Zeal::EqGame::print_chat("Zeal special input enabled");
     else
         Zeal::EqGame::print_chat("Zeal special input disabled");
+    ZealService::get_instance()->ui->options->UpdateOptions();
 }
 void chat::set_timestamp(bool val)
 {
@@ -326,6 +335,7 @@ void chat::set_timestamp(bool val)
         Zeal::EqGame::print_chat("Timestamps enabled");
     else
         Zeal::EqGame::print_chat("Timestamps disabled");
+    ZealService::get_instance()->ui->options->UpdateOptions();
 }
 void chat::set_bluecon(bool val)
 {
@@ -335,6 +345,7 @@ void chat::set_bluecon(bool val)
         Zeal::EqGame::print_chat("Blue con color is now set to usercolor 70");
     else
         Zeal::EqGame::print_chat("Default blue con color.");
+    ZealService::get_instance()->ui->options->UpdateOptions();
 }
 chat::~chat()
 {

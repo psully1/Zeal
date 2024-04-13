@@ -38,7 +38,6 @@ namespace Zeal
 			/*inline int fn_loadoptions = 0x536CE0;*/
 			static int fn_KeyboardPageHandleKeyboardMsg = 0x42c4fb;
 
-
 			static mem::function<void __fastcall(int t, int unused, const char* data, short color, bool un)> print_chat = 0x537f99;
 			//static mem::function<void __stdcall(const char* data)> log = 0x5240dc;
 			static mem::function<char __fastcall(int display, int unused, Zeal::EqStructures::Entity*, Zeal::EqStructures::Entity*)> can_target = 0x4afa90;
@@ -83,6 +82,10 @@ namespace Zeal
 		{
 			bool spellbook_window_open();
 		}
+		void do_inspect(Zeal::EqStructures::Entity* player);
+		void execute_cmd(UINT cmd, bool isdown, int unk2);
+		EqStructures::Everquest* get_eq();
+		int get_gamestate();
 		bool is_new_ui();
 		HWND get_game_window();
 		bool is_in_char_select();
@@ -91,6 +94,7 @@ namespace Zeal
 		void CXStr_PrintString(Zeal::EqUI::CXSTR* str, const char* format, ...);
 		Vec3 get_player_head_pos();
 		Vec3 get_view_actor_head_pos();
+		void pet_command(int cmd, short spawn_id);
 		float encum_factor();
 		Zeal::EqStructures::Entity* get_view_actor_entity();
 		inline Zeal::EqStructures::GuildName* guild_names = (Zeal::EqStructures::GuildName*)0x7F9C94;
@@ -102,6 +106,7 @@ namespace Zeal
 		bool is_view_actor_me();
 		void print_chat(std::string data);
 		void print_chat(const char* format, ...);
+		void print_chat(short color, const char* format, ...);
 		void print_chat_zeal(const char* data, short color, bool un);
 		void set_target(Zeal::EqStructures::Entity* target);
 		bool can_move();
@@ -115,6 +120,9 @@ namespace Zeal
 		Zeal::EqStructures::CameraInfo* get_camera();
 		Zeal::EqStructures::Entity* get_entity_by_id(short id);
 		Zeal::EqStructures::Entity* get_entity_by_parent_id(short parent_id);
+		void send_message(UINT opcode, int* buffer, UINT size, int unknown);
+		char* strip_name(char* name);
+		char* get_string(UINT id);
 		//void set_camera_position(Vec3* pos);
 		int* get_display();
 		float heading_to_yaw(float heading);

@@ -16,8 +16,8 @@
 void looting::set_hide_looted(bool val)
 {
 	hide_looted = val;
-	ZealService::get_instance()->ui->SetChecked("Zeal_HideCorpse", hide_looted);
 	ZealService::get_instance()->ini->setValue<bool>("Zeal", "HideLooted", hide_looted);
+	ZealService::get_instance()->ui->options->UpdateOptions();
 }
 
 
@@ -36,44 +36,98 @@ looting::~looting()
 {
 }
 
-static int __fastcall LinkAllButtonDown(Zeal::EqUI::LootWnd* pWnd, int unused, Zeal::EqUI::CXPoint pt, unsigned int flag)
+void looting::init_ui()
 {
-	int rval = reinterpret_cast<int(__fastcall*)(Zeal::EqUI::LootWnd* pWnd, int unused, Zeal::EqUI::CXPoint pt, unsigned int flag)>(0x0595330)(pWnd, unused, pt, flag);
-	Zeal::EqUI::ChatWnd* wnd = Zeal::EqGame::Windows->ChatManager->GetActiveChatWindow();
-	if (wnd)
+}
+
+//struct formatted_msg
+//{
+//	UINT16 unk;
+//	UINT16 string_id;
+//	UINT16 type;
+//	char message[0];
+//};
+//
+//
+//struct pkt_loot_item
+//{
+//	WORD corpse_id;
+//	WORD player_id;
+//	WORD slot_id;
+//	UINT8 unknown[2];
+//	UINT32 auto_loot;
+//};
+//pkt_loot_item li;
+//li.player_id = Zeal::EqGame::get_self()->SpawnId;
+//li.corpse_id = Zeal::EqGame::get_active_corpse()->SpawnId;
+//li.auto_loot = 1;
+//li.slot_id = Zeal::EqGame::Windows->Loot->ItemSlotIndex[i];
+//Zeal::EqGame::send_message(0x40a0, (int*)&li, sizeof(li), 1);
+
+void looting::looted_item()
+{
+	if (loot_all && Zeal::EqGame::Windows && Zeal::EqGame::Windows->Loot && Zeal::EqGame::Windows->Loot->IsVisible)
 	{
-		std::stringstream ss;
+		std::string corpse_name = Zeal::EqGame::strip_name(Zeal::EqGame::get_active_corpse()->Name);
+		std::string self_name = Zeal::EqGame::get_self()->Name;
+		bool is_me = corpse_name == self_name; //my own corpse
+		byte nodrop_confirm_bypass[2] = { 0x74, 0x22 };
+		int item_count = 0;
+		for (int i = 0; i < 30; i++)
+			if (Zeal::EqGame::Windows->Loot->Item[i])
+				item_count++;
+
+		if (is_me && item_count == 1)
+		{
+			Zeal::EqGame::print_chat(USERCOLOR_LOOT, "Loot all but 1 item on your own corpse for safety, you may click the item to loot it yourself.");
+			loot_all = false;
+			return;
+		}
 		for (int i = 0; i < 30; i++)
 		{
+			bool loot = false;
 			if (Zeal::EqGame::Windows->Loot->Item[i])
-				ss << "" << std::setw(7) << std::setfill('0') << Zeal::EqGame::Windows->Loot->Item[i]->Id << Zeal::EqGame::Windows->Loot->Item[i]->Name << "";
-			if (Zeal::EqGame::Windows->Loot->Item[i + 1] && i+1<30)
-				ss << ", ";
+			{
+				if (is_me && item_count>1)
+					loot = true;
+				else if (Zeal::EqGame::Windows->Loot->Item[i]->NoDrop != 0)
+					loot = true;
+
+				if (loot)
+				{
+					Zeal::EqGame::Windows->Loot->RequestLootSlot(i, true);
+					return;
+				}
+			}
 		}
-
-
-		Zeal::EqUI::EditWnd* input_wnd = (Zeal::EqUI::EditWnd*)wnd->edit;
-		input_wnd->ReplaceSelection(ss.str(), false);
-		input_wnd->SetFocus();
+		loot_all = false;
 	}
 	else
-		Zeal::EqGame::print_chat("No active chat window found");
-	
-	return rval;
+		loot_all = false;
 }
 
 looting::looting(ZealService* zeal)
 {
 	hide_looted = zeal->ini->getValue<bool>("Zeal", "HideLooted"); //just remembers the state
-	zeal->main_loop_hook->add_callback([this]() {
-		Zeal::EqUI::BasicWnd* btn = Zeal::EqGame::Windows->Loot->GetChildItem("LinkAllButton");
-		mem::unprotect_memory(&btn, 4);
-		if (btn)
+	zeal->callbacks->add_generic([this]() { init_ui(); }, callback_type::InitUI);
+	zeal->callbacks->add_generic([this]() {
+		if (!Zeal::EqGame::Windows || !Zeal::EqGame::Windows->Loot || !Zeal::EqGame::Windows->Loot->IsVisible)
 		{
-			btn->SetupCustomVTable();
-			btn->vtbl->HandleLButtonDown = LinkAllButtonDown;
+			loot_all = false;
+			return;
 		}
-	}, callback_fn::InitUI);
+		}, callback_type::MainLoop);
+		zeal->callbacks->add_packet([this](UINT opcode, char* buffer, UINT len) {
+			if (opcode == 0x4031)
+				looted_item();
+		//	if (opcode == 0x4236)
+		//{
+		//	formatted_msg* data = (formatted_msg*)buffer;
+		//	if (data->string_id == 467) //467 --You have looted a %1.--
+		//		looted_item();
+		//}
+		return false; 
+		});
 	zeal->commands_hook->add("/hidecorpse", { "/hc", "/hideco", "/hidec" },
 		[this](std::vector<std::string>& args) {
 			if (args.size() > 1 && StringUtil::caseInsensitive(args[1], "looted"))
@@ -94,4 +148,6 @@ looting::looting(ZealService* zeal)
 		});
 	
 	zeal->hooks->Add("ReleaseLoot", Zeal::EqGame::EqGameInternal::fn_releaseloot, release_loot, hook_type_detour);
+	if (Zeal::EqGame::is_in_game())
+		init_ui();
 }

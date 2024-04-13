@@ -1,25 +1,29 @@
 #include "framework.h"
 #include <thread>
 #include "Zeal.h"
-HINSTANCE this_module;
+static HINSTANCE this_module{};
+static std::thread MainLoop{};
+static std::atomic<bool> exitFlag(false);
 
 void init()
 {
-    ZealService zeal{};
-    while (!zeal.exit && !(GetAsyncKeyState(VK_PAUSE) & 0x01 && GetAsyncKeyState(VK_SHIFT)))
+    ZealService zeal;
+    while (!exitFlag.load(std::memory_order_acquire))
     {
-        Sleep(100);
+        if (GetAsyncKeyState(VK_PAUSE) & 0x8000 && GetAsyncKeyState(VK_SHIFT) & 0x8000)
+            break;
+        Sleep(5);
     }
-
-     zeal.~ZealService(); //destructor
-    
-     Sleep(1000);
-
-    while (!FreeLibrary(this_module))
+    if (!exitFlag.load(std::memory_order_acquire))
     {
-        Sleep(10);
+        zeal.~ZealService();
+        Sleep(1000);
+        while (!FreeLibrary(this_module))
+        {
+            Sleep(10);
+        }
+        FreeLibraryAndExitThread(this_module, 0);
     }
-    FreeLibraryAndExitThread(this_module, 0);
 }
 
 
@@ -37,17 +41,15 @@ BOOL APIENTRY DllMain( HMODULE hModule,
         {
             this_module = hModule;
             DisableThreadLibraryCalls(hModule);
-            std::thread t(init);
-            t.detach();
+            MainLoop = std::thread(init);
+            MainLoop.detach();
         }
 		break;
 	}
-    case DLL_THREAD_ATTACH:
-        break;
-    case DLL_THREAD_DETACH:
-        break;
     case DLL_PROCESS_DETACH:
-        ZealService::get_instance()->exit = true;
+        exitFlag.store(true, std::memory_order_release);
+        if (MainLoop.joinable())
+            MainLoop.join();
         break;
     }
     return TRUE;

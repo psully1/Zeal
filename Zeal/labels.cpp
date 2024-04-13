@@ -16,6 +16,8 @@ void default_empty(Zeal::EqUI::CXSTR* str, bool* override_color, ULONG* color)
 bool GetLabelFromEq(int EqType, Zeal::EqUI::CXSTR* str, bool* override_color, ULONG* color)
 {
 	ZealService* zeal = ZealService::get_instance();
+	if (!Zeal::EqGame::is_in_game())
+		return ZealService::get_instance()->hooks->hook_map["GetLabel"]->original(GetLabelFromEq)(EqType, str, override_color, color);
 	switch (EqType)
 	{
 	case 80:
@@ -145,7 +147,7 @@ labels::~labels()
 
 labels::labels(ZealService* zeal)
 {
-	zeal->main_loop_hook->add_callback([this]() { callback_main(); });
+	zeal->callbacks->add_generic([this]() { callback_main(); });
 	//zeal->hooks->Add("FinalizeLoot", Zeal::EqGame::EqGameInternal::fn_finalizeloot, finalize_loot, hook_type_detour);
 	zeal->hooks->Add("GetLabel", Zeal::EqGame::EqGameInternal::fn_GetLabelFromEQ, GetLabelFromEq, hook_type_detour);
 	zeal->hooks->Add("GetGauge", Zeal::EqGame::EqGameInternal::fn_GetGaugeLabelFromEQ, GetGaugeFromEq, hook_type_detour);

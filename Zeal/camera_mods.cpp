@@ -63,15 +63,19 @@ void CameraMods::toggle_zeal_cam(bool enabled)
     if (enabled)
     {
         *Zeal::EqGame::camera_view = Zeal::EqEnums::CameraView::ZealCam;
-        zeal_cam_pitch = camera_math::pitch_to_normal(self->Pitch);
-        zeal_cam_yaw = self->Heading;
+        if (self) 
+        {
+            zeal_cam_pitch = camera_math::pitch_to_normal(self->Pitch);
+            zeal_cam_yaw = self->Heading;
+        }
         desired_zoom += zoom_speed;
         mem::set(0x4db8ce, 0x90, 6, original_cam[0] == 0x0 ? original_cam : 0);
         mem::write<BYTE>(0x4db8d9, 0xEB); //fix the camera bad location print
     }
     else if (original_cam[0] != 0x0)
     {
-        self->Pitch = camera_math::pitch_to_game(zeal_cam_pitch);
+        if (self)
+            self->Pitch = camera_math::pitch_to_game(zeal_cam_pitch);
         current_zoom = 0;
         if (*Zeal::EqGame::camera_view == Zeal::EqEnums::CameraView::ZealCam && Zeal::EqGame::is_in_game())
            *Zeal::EqGame::camera_view = Zeal::EqEnums::CameraView::FirstPerson;
@@ -222,6 +226,7 @@ void CameraMods::set_smoothing(bool val)
         toggle_zeal_cam(enabled);
     else
         toggle_zeal_cam(false);
+    ZealService::get_instance()->ui->options->UpdateOptions();
 }
 
 void CameraMods::interpolate_zoom() 
@@ -418,8 +423,8 @@ void CameraMods::callback_render()
 {
     if (enabled)
     {
-        if (Zeal::EqGame::is_in_game() && Zeal::EqGame::get_self() && Zeal::EqGame::get_char_info() && !*Zeal::EqGame::is_right_mouse_down && *Zeal::EqGame::camera_view == Zeal::EqEnums::CameraView::ZealCam)
-        {
+        if (Zeal::EqGame::is_in_game() && Zeal::EqGame::get_self() && Zeal::EqGame::get_char_info() /*&& !*Zeal::EqGame::is_right_mouse_down*/ && *Zeal::EqGame::camera_view == Zeal::EqEnums::CameraView::ZealCam)
+        { 
             if (Zeal::EqGame::get_self()->Position.Dist(Zeal::EqGame::get_char_info()->ZoneEnter) != 0)
                 update_cam();
         }
@@ -513,6 +518,22 @@ void __stdcall procRightMouse(int x, int y)
     zeal->hooks->hook_map["procRightMouse"]->original(procRightMouse)(x, y);
 }
 
+void CameraMods::set_pan_delay(int value_ms)
+{
+   pan_delay = value_ms;
+   ZealService::get_instance()->ini->setValue<int>("Zeal", "PanDelay", pan_delay);
+   ZealService::get_instance()->ui->options->UpdateOptions();
+}
+
+void CameraMods::update_sensitivity()
+{
+    ZealService::get_instance()->ini->setValue<float>("Zeal", "MouseSensitivityX", user_sensitivity_x);
+    ZealService::get_instance()->ini->setValue<float>("Zeal", "MouseSensitivityY", user_sensitivity_y);
+    ZealService::get_instance()->ini->setValue<float>("Zeal", "MouseSensitivityX3rd", user_sensitivity_x_3rd);
+    ZealService::get_instance()->ini->setValue<float>("Zeal", "MouseSensitivityY3rd", user_sensitivity_y_3rd);
+    ZealService::get_instance()->ui->options->UpdateOptions();
+}
+
 CameraMods::CameraMods(ZealService* zeal, IO_ini* ini)
 {
     load_settings(ini);
@@ -528,9 +549,10 @@ CameraMods::CameraMods(ZealService* zeal, IO_ini* ini)
     lastTime = std::chrono::steady_clock::now();
     fps = 0;
     height = 0;
-    zeal->main_loop_hook->add_callback([this]() { callback_main();  });
-    zeal->main_loop_hook->add_callback([this]() { callback_render();  }, callback_fn::Render);
-    zeal->main_loop_hook->add_callback([this]() { callback_characterselect();  }, callback_fn::CharacterSelect);
+    zeal->callbacks->add_generic([this]() { callback_main();  });
+    zeal->callbacks->add_generic([this]() { callback_render();  }, callback_type::Render);
+    //zeal->main_loop_hook->add_callback([this]() { callback_characterselect();  }, callback_fn::CharacterSelect);
+    zeal->callbacks->add_generic([this]() { callback_characterselect(); }, callback_type::EndMainLoop);
     zeal->hooks->Add("HandleMouseWheel", Zeal::EqGame::EqGameInternal::fn_handle_mouseweheel, handle_mouse_wheel, hook_type_detour);
     zeal->hooks->Add("procMouse", 0x537707, procMouse, hook_type_detour);
     zeal->hooks->Add("procRightMouse", 0x54699d, procRightMouse, hook_type_detour);
@@ -541,8 +563,7 @@ CameraMods::CameraMods(ZealService* zeal, IO_ini* ini)
             {
                 if (StringUtil::tryParse(args[1], &delay))
                 {
-                    pan_delay = delay;
-                    ini->setValue<int>("Zeal", "PanDelay", pan_delay);
+                    set_pan_delay(delay);
                     Zeal::EqGame::print_chat("Click to pan delay is now %i", pan_delay);
                 }
             }
@@ -572,10 +593,7 @@ CameraMods::CameraMods(ZealService* zeal, IO_ini* ini)
                 user_sensitivity_x_3rd = x_sens;
                 user_sensitivity_y_3rd = y_sens;
                 set_smoothing(true);
-                ZealService::get_instance()->ini->setValue<float>("Zeal", "MouseSensitivityX", user_sensitivity_x);
-                ZealService::get_instance()->ini->setValue<float>("Zeal", "MouseSensitivityY", user_sensitivity_y);
-                ZealService::get_instance()->ini->setValue<float>("Zeal", "MouseSensitivityX3rd", user_sensitivity_x_3rd);
-                ZealService::get_instance()->ini->setValue<float>("Zeal", "MouseSensitivityY3rd", user_sensitivity_y_3rd);
+                update_sensitivity();
                 Zeal::EqGame::print_chat("New camera sensitivity [%f] [%f]", user_sensitivity_x, user_sensitivity_y);
             }
             else if (args.size() == 5)
@@ -600,11 +618,7 @@ CameraMods::CameraMods(ZealService* zeal, IO_ini* ini)
                 user_sensitivity_x_3rd = x_sens_3rd;
                 user_sensitivity_y_3rd = y_sens_3rd;
                 set_smoothing(true);
-                ZealService::get_instance()->ini->setValue<float>("Zeal", "MouseSensitivityX", user_sensitivity_x);
-                ZealService::get_instance()->ini->setValue<float>("Zeal", "MouseSensitivityY", user_sensitivity_y);
-                ZealService::get_instance()->ini->setValue<float>("Zeal", "MouseSensitivityX3rd", user_sensitivity_x_3rd);
-                ZealService::get_instance()->ini->setValue<float>("Zeal", "MouseSensitivityY3rd", user_sensitivity_y_3rd);
-
+                update_sensitivity();
                 Zeal::EqGame::print_chat("New camera sensitivity FirstPerson: [%f] [%f] ThirdPerson: [%f] [%f]", user_sensitivity_x, user_sensitivity_y, user_sensitivity_x_3rd, user_sensitivity_y_3rd);
             }
             else
@@ -625,15 +639,15 @@ CameraMods::CameraMods(ZealService* zeal, IO_ini* ini)
             }
             return true;
         });
-    zeal->binds_hook->replace_bind(15, [this](int state) { handle_camera_motion_binds(15, state); return false; });
-    zeal->binds_hook->replace_bind(115, [this](int state) { handle_camera_motion_binds(15, state); return false; });
-    zeal->binds_hook->replace_bind(111, [this](int state) { handle_camera_motion_binds(15, state); return false; });
-    zeal->binds_hook->replace_bind(16, [this](int state) { handle_camera_motion_binds(16, state); return false; });
-    zeal->binds_hook->replace_bind(116, [this](int state) { handle_camera_motion_binds(16, state); return false; });
-    zeal->binds_hook->replace_bind(112, [this](int state) { handle_camera_motion_binds(16, state); return false; });
-    zeal->binds_hook->replace_bind(18, [this](int state) { handle_camera_motion_binds(18, state); return false; });
-    zeal->binds_hook->replace_bind(19, [this](int state) { handle_camera_motion_binds(19, state); return false; });
-    zeal->binds_hook->replace_bind(20, [this](int state) { handle_cycle_camera_views(20, state); return false; });
+    zeal->binds_hook->replace_cmd(15, [this](int state) { handle_camera_motion_binds(15, state); return false; });
+    zeal->binds_hook->replace_cmd(115, [this](int state) { handle_camera_motion_binds(15, state); return false; });
+    zeal->binds_hook->replace_cmd(111, [this](int state) { handle_camera_motion_binds(15, state); return false; });
+    zeal->binds_hook->replace_cmd(16, [this](int state) { handle_camera_motion_binds(16, state); return false; });
+    zeal->binds_hook->replace_cmd(116, [this](int state) { handle_camera_motion_binds(16, state); return false; });
+    zeal->binds_hook->replace_cmd(112, [this](int state) { handle_camera_motion_binds(16, state); return false; });
+    zeal->binds_hook->replace_cmd(18, [this](int state) { handle_camera_motion_binds(18, state); return false; });
+    zeal->binds_hook->replace_cmd(19, [this](int state) { handle_camera_motion_binds(19, state); return false; });
+    zeal->binds_hook->replace_cmd(20, [this](int state) { handle_cycle_camera_views(20, state); return false; });
 
 }
 
