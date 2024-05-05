@@ -2,10 +2,12 @@
 #include "EqStructures.h"
 #include "EqAddresses.h"
 #include "EqFunctions.h"
+#include "EqPackets.h"
 #include "Zeal.h"
 #include <algorithm>
 #include <cctype>
-#include "StringUtil.h"
+#include "string_util.h"
+
 
 void ChatCommands::print_commands()
 {
@@ -16,7 +18,7 @@ void ChatCommands::print_commands()
 	{
 		ss << name;
 		if (c.aliases.size() > 0)
-			ss << "  aliases  [";
+			ss << " [";
 		for (auto it = c.aliases.begin(); it != c.aliases.end(); ++it) {
 			auto& a = *it;
 			ss << a;
@@ -26,6 +28,8 @@ void ChatCommands::print_commands()
 		}
 		if (c.aliases.size() > 0)
 			ss << "]";
+
+		ss << " " << c.description;
 		ss << std::endl;
 	}
 	Zeal::EqGame::print_chat(ss.str());
@@ -38,7 +42,7 @@ void __fastcall InterpretCommand(int c, int unused, int player, char* cmd)
 
 	if (str_cmd.length()>0 && str_cmd.at(0) != '/')
 		str_cmd = "/" + str_cmd;
-	std::vector<std::string> args =  StringUtil::split(str_cmd," ");
+	std::vector<std::string> args = Zeal::String::split(str_cmd," ");
 
 	if (args.size() > 0)
 	{
@@ -68,9 +72,9 @@ void __fastcall InterpretCommand(int c, int unused, int player, char* cmd)
 	zeal->hooks->hook_map["commands"]->original(InterpretCommand)(c, unused, player, cmd);
 }
 
-void ChatCommands::add(std::string cmd, std::vector<std::string>aliases, std::function<bool(std::vector<std::string>&args)> callback)
+void ChatCommands::add(std::string cmd, std::vector<std::string>aliases, std::string description, std::function<bool(std::vector<std::string>&args)> callback)
 {
-	CommandFunctions[cmd] = ZealCommand(aliases, callback);
+	CommandFunctions[cmd] = ZealCommand(aliases, description, callback);
 }
 
 ChatCommands::~ChatCommands()
@@ -79,23 +83,13 @@ ChatCommands::~ChatCommands()
 }
 ChatCommands::ChatCommands(ZealService* zeal)
 {
-
-	//just going to use lambdas for simple commands
-	//add("/zpet", { },
-	//	[](std::vector<std::string>& args) {
-	//		if (args.size() > 1)
-	//		{
-	//			int cmd = 0;
-	//			if (StringUtil::tryParse(args[1], &cmd))
-	//			{
-	//				Zeal::EqGame::pet_command(cmd, 0);
-	//			}
-	//			
-	//			return true; //return true to stop the game from processing any further on this command, false if you want to just add features to an existing cmd
-	//		}
-	//		return false;
-	//	});
-	add("/target", { "/cleartarget" },
+	add("o", { "" }, "Removes the o command that is switching ui from new to old.",
+		[](std::vector<std::string>& args) {
+			if (Zeal::String::compare_insensitive(args[0], "o"))
+				return true;
+			return false;
+		});
+	add("/target", { "/cleartarget" }, "Adds clear target functionality to the /target command if you give it no arguments.",
 		[](std::vector<std::string>& args) {
 			if (args.size() == 1)
 			{
@@ -104,42 +98,75 @@ ChatCommands::ChatCommands(ZealService* zeal)
 			}
 			return false;
 		});
-	add("/autoinventory", { "/autoinv", "/ai" },
+	add("/corpsedrag", { "/drag"}, "Attempts to corpse drag your current target.",
+		[](std::vector<std::string>& args) {
+			if (args.size() == 1)
+			{
+				if (Zeal::EqGame::get_target())
+				{
+					Zeal::Packets::CorpseDrag_Struct tmp;
+					memset(&tmp, 0, sizeof(tmp));
+					strcpy_s(tmp.CorpseName, 30, Zeal::EqGame::get_target()->Name);
+					strcpy_s(tmp.DraggerName, 30, Zeal::EqGame::get_self()->Name);
+					Zeal::EqGame::send_message(Zeal::Packets::opcodes::CorpseDrag, (int*)&tmp, sizeof(tmp), 0);
+				}
+				return true; //return true to stop the game from processing any further on this command, false if you want to just add features to an existing cmd
+			}
+			return false;
+		});
+	add("/corpsedrop", { "/drop"}, "Attempts to drop a corpse (your current target). To drop all use /corpsedrop all",
+		[](std::vector<std::string>& args) {
+			if (args.size() == 1)
+			{
+				if (Zeal::EqGame::get_target())
+				{
+					Zeal::Packets::CorpseDrag_Struct tmp;
+					memset(&tmp, 0, sizeof(tmp));
+					strcpy_s(tmp.CorpseName, 30, Zeal::EqGame::get_target()->Name);
+					strcpy_s(tmp.DraggerName, 30, Zeal::EqGame::get_self()->Name);
+					Zeal::EqGame::send_message(Zeal::Packets::opcodes::CorpseDrop, (int*)&tmp, sizeof(tmp), 0);
+				}
+				return true; //return true to stop the game from processing any further on this command, false if you want to just add features to an existing cmd
+			}
+			else if (Zeal::String::compare_insensitive(args[1], "all"))
+			{
+				Zeal::EqGame::send_message(Zeal::Packets::opcodes::CorpseDrop, 0, 0, 0);
+			}
+			return false;
+		});
+	add("/trade", { "/opentrade", "/ot" }, "Opens a trade window with your current target.",
+		[](std::vector<std::string>& args) {
+			if (args.size() == 1)
+			{
+				if (Zeal::EqGame::get_target())
+				{
+					Zeal::Packets::TradeRequest_Struct tmp;
+					memset(&tmp, 0, sizeof(tmp));
+					tmp.from_id = Zeal::EqGame::get_self()->SpawnId;
+					tmp.to_id = Zeal::EqGame::get_target()->SpawnId;
+					Zeal::EqGame::send_message(Zeal::Packets::opcodes::RequestTrade, (int*)&tmp, sizeof(tmp), 0);
+				}
+				return true; //return true to stop the game from processing any further on this command, false if you want to just add features to an existing cmd
+			}
+			return false;
+		});
+	add("/autoinventory", { "/autoinv", "/ai" }, "Puts whatever is on your cursor into your inventory.",
 		[](std::vector<std::string>& args) {
 			Zeal::EqGame::EqGameInternal::auto_inventory(Zeal::EqGame::get_char_info(), &Zeal::EqGame::get_char_info()->CursorItem, 0);
 			return true; //return true to stop the game from processing any further on this command, false if you want to just add features to an existing cmd
 		});
-	add("/autobank", { "/autoba", "/ab" },
+	add("/autobank", { "/autoba", "/ab" }, "Changes your money into its highest denomination in bank and inventory (requires bank to be open).",
 		[](std::vector<std::string>& args) {
 			ZealService::get_instance()->ui->bank->change();
 			return true; //return true to stop the game from processing any further on this command, false if you want to just add features to an existing cmd
 		});
-	add("/fov", { },
-		[](std::vector<std::string>& args) {
-			Zeal::EqStructures::CameraInfo* ci = Zeal::EqGame::get_camera();
-			if (ci)
-			{
-				float fov = 0;
-				if (args.size()>1 && StringUtil::tryParse(args[1], &fov))
-				{
-					ci->FieldOfView = fov;
-				}
-				else
-				{
-					Zeal::EqGame::print_chat("Current FOV [%f]", ci->FieldOfView);
-				}
-			
-			}
-			
-			return true; //return true to stop the game from processing any further on this command, false if you want to just add features to an existing cmd
-		});
-	add("/aspectratio", { "/ar"},
+	add("/aspectratio", { "/ar"}, "Change your aspect ratio.",
 		[](std::vector<std::string>& args) {
 			Zeal::EqStructures::CameraInfo* ci = Zeal::EqGame::get_camera();
 			if (ci)
 			{
 				float ar = 0;
-				if (args.size() > 1 && StringUtil::tryParse(args[1], &ar))
+				if (args.size() > 1 && Zeal::String::tryParse(args[1], &ar))
 				{
 					ci->AspectRatio = ar;
 				}
@@ -152,7 +179,7 @@ ChatCommands::ChatCommands(ZealService* zeal)
 
 			return true; //return true to stop the game from processing any further on this command, false if you want to just add features to an existing cmd
 		});
-	add("/clearchat", {},
+	add("/clearchat", {}, "Adds clearchat functionality to oldui.",
 		[](std::vector<std::string>& args) {
 			// each line can hold up to 256 characters but typically doesnt reach that far.
 			// each unused line is set with '@\0', so lets clear to that
@@ -169,22 +196,22 @@ ChatCommands::ChatCommands(ZealService* zeal)
 
 			return false;
 		});
-	add("/sit", {},
+	add("/sit", {}, "Adds arguments on/down to force you to sit down instead of just toggling.",
 		[](std::vector<std::string>& args) {
 			if (args.size() > 1 && args.size() < 3) {
-				if (StringUtil::caseInsensitive(args[1], "on") || StringUtil::caseInsensitive(args[1], "down")) {
+				if (Zeal::String::compare_insensitive(args[1], "on") || Zeal::String::compare_insensitive(args[1], "down")) {
 					Zeal::EqGame::get_self()->ChangeStance(Stance::Sit);
 					return true;
 				}
 			}
 			return false;
 		});
-	add("/camp", {},
+	add("/camp", {}, "Adds auto sit when attempting to camp.",
 		[](std::vector<std::string>& args) {
 			Zeal::EqGame::get_self()->ChangeStance(Stance::Sit);
 			return false;
 		});
-	add("/showhelm", { "/helm" },
+	add("/showhelm", { "/helm" }, "Sends server command #showhelm with arugments on/off.",
 		[](std::vector<std::string>& args) {
 			if (args.size() == 1)
 			{
@@ -192,11 +219,11 @@ ChatCommands::ChatCommands(ZealService* zeal)
 				return true;
 			}
 			if (args.size() > 1 && args.size() < 3) {
-				if (StringUtil::caseInsensitive(args[1], "on")) {
+				if (Zeal::String::compare_insensitive(args[1], "on")) {
 					Zeal::EqGame::do_say(true, "#showhelm on");
 					return true;
 				}
-				else if (StringUtil::caseInsensitive(args[1], "off"))
+				else if (Zeal::String::compare_insensitive(args[1], "off"))
 				{
 					Zeal::EqGame::do_say(true, "#showhelm off");
 					return true;
@@ -204,27 +231,27 @@ ChatCommands::ChatCommands(ZealService* zeal)
 			}
 			return false;
 		});
-	add("/showlootlockouts", { "/sll", "/showlootlockout", "/showlockouts" },
+	add("/showlootlockouts", { "/sll", "/showlootlockout", "/showlockouts" }, "Sends #showlootlockouts to server.",
 		[](std::vector<std::string>& args) {
 
 			Zeal::EqGame::do_say(true, "#showlootlockouts");
 			return true;
 		});
-	add("/zeal", { "/zea" },
+	add("/zeal", { "/zea" }, "Help and version information.",
 		[this](std::vector<std::string>& args) {
 			if (args.size() == 1)
 			{
 				Zeal::EqGame::print_chat("Available args: version, help"); //leave room for more args on this command for later
 				return true;
 			}
-			if (args.size() > 1 && StringUtil::caseInsensitive(args[1], "version"))
+			if (args.size() > 1 && Zeal::String::compare_insensitive(args[1], "version"))
 			{
 				std::stringstream ss;
 				ss << "Zeal version: " << ZEAL_VERSION << std::endl;
 				Zeal::EqGame::print_chat(ss.str());
 				return true;
 			}
-			if (args.size() > 1 && StringUtil::caseInsensitive(args[1], "help"))
+			if (args.size() > 1 && Zeal::String::compare_insensitive(args[1], "help"))
 			{
 				print_commands();
 				return true;
@@ -232,7 +259,7 @@ ChatCommands::ChatCommands(ZealService* zeal)
 			return false;
 		});
 	
-	add("/clientmanatick", { "/cmt" },
+	add("/clientmanatick", { "/cmt" }, "Toggle client mana tick (disabled by default in this client).",
 		[this](std::vector<std::string>& args) {
 			BYTE orig1[7] = { 0x66, 0x01, 0xBE, 0x9A, 0x0, 0x0, 0x0 }; //0x4C3F93
 			BYTE orig2[7] = { 0x66, 0x01, 0x87, 0x9A, 0x0, 0x0, 0x0 }; //0x4c7642
@@ -251,13 +278,13 @@ ChatCommands::ChatCommands(ZealService* zeal)
 			return true;
 		});
 
-	add("/reloadskin", { },
+	add("/reloadskin", { }, "Reload your current ui with ini.",
 		[this](std::vector<std::string>& args) {
 			mem::write<BYTE>(0x8092d9, 1); //reload skin
 			mem::write<BYTE>(0x8092da, 1);  //reload with ui
 			return true;
 		});
-	add("/alarm", {},
+	add("/alarm", {}, "Open the alarm ui and gives alarm functionality on old ui.",
 		[this, zeal](std::vector<std::string>& args) {
 			if (Zeal::EqGame::is_new_ui()) {
 				if (Zeal::EqGame::Windows->Alarm)
@@ -275,12 +302,12 @@ ChatCommands::ChatCommands(ZealService* zeal)
 					return true;
 				}
 				if (args.size() > 1 && args.size() < 4) {
-					if (StringUtil::caseInsensitive(args[1], "set")) {
+					if (Zeal::String::compare_insensitive(args[1], "set")) {
 						int minutes = 0;
 						int seconds = 0;
 						size_t delim[2] = { args[2].find("m"), args[2].find("s") };
-						if (StringUtil::tryParse(args[2].substr(0, delim[0]), &minutes) &&
-								StringUtil::tryParse(args[2].substr(delim[0]+1, delim[1]), &seconds))
+						if (Zeal::String::tryParse(args[2].substr(0, delim[0]), &minutes) &&
+								Zeal::String::tryParse(args[2].substr(delim[0]+1, delim[1]), &seconds))
 						{
 							zeal->alarm->Set(minutes, seconds);
 							return true;
@@ -291,7 +318,7 @@ ChatCommands::ChatCommands(ZealService* zeal)
 							return true;
 						}
 					}
-					else if (StringUtil::caseInsensitive(args[1], "halt")) {
+					else if (Zeal::String::compare_insensitive(args[1], "halt")) {
 						zeal->alarm->Halt();
 						return true;
 					}
@@ -299,7 +326,7 @@ ChatCommands::ChatCommands(ZealService* zeal)
 			}
 			return false;
 		});
-		add("/inspect", {},
+		add("/inspect", {}, "Inspect your current target.",
 		[this, zeal](std::vector<std::string>& args) {
 				if (args.size() > 1 && args[1] == "target")
 				{
@@ -317,7 +344,7 @@ ChatCommands::ChatCommands(ZealService* zeal)
 				}
 			return false;
 		});
-	add("/help", { "/hel" },
+	add("/help", { "/hel" }, "Adds zeal to the help list.",
 		[this](std::vector<std::string>& args) {
 			if (args.size() == 1)
 			{
@@ -332,7 +359,7 @@ ChatCommands::ChatCommands(ZealService* zeal)
 				Zeal::EqGame::print_chat(ss.str());
 				return true;
 			}
-			if (args.size() > 1 && StringUtil::caseInsensitive(args[1],"zeal"))
+			if (args.size() > 1 && Zeal::String::compare_insensitive(args[1],"zeal"))
 			{
 				print_commands();
 				return true;

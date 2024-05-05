@@ -4,7 +4,7 @@
 #include "EqFunctions.h"
 #include "Zeal.h"
 #include <algorithm>
-#include "StringUtil.h"
+#include "string_util.h"
 
 void Melody::start()
 {
@@ -71,8 +71,8 @@ void Melody::tick()
             {
                 if (!Zeal::EqGame::get_eq()->IsOkToTransact())
                 {
-                    Zeal::EqGame::print_chat(USERCOLOR_SPELL_FAILURE, "You are too distracted to keep a melody!");
-                    end();
+                    //Zeal::EqGame::print_chat(USERCOLOR_SPELL_FAILURE, "You are too distracted to keep a melody!");
+                    //end();
                     return;
                 }
                 if (Zeal::EqGame::get_spell_mgr()->Spells[Zeal::EqGame::get_char_info()->MemorizedSpell[current_gem]]->TargetType == 5 && !Zeal::EqGame::get_target())
@@ -93,7 +93,7 @@ Melody::Melody(ZealService* zeal, IO_ini* ini)
     zeal->callbacks->add_generic([this]() { tick();  });
     zeal->callbacks->add_generic([this]() { end(); }, callback_type::CharacterSelect);
     zeal->hooks->Add("StopCast", 0x4cb510, StopCast, hook_type_detour); //add extra prints for new loot types
-    zeal->commands_hook->add("/melody", { },
+    zeal->commands_hook->add("/melody", { }, "Bard only, auto cycles 5 songs of your choice.",
         [this](std::vector<std::string>& args) {
 
             if (active)
@@ -118,7 +118,7 @@ Melody::Melody(ZealService* zeal, IO_ini* ini)
             for (int i = 1; i < args.size(); i++) //start at argument 1 because 0 is the command itself
             {
                 int current_gem = -1;
-                if (StringUtil::tryParse(args[i], &current_gem) && current_gem<9 && current_gem>0)
+                if (Zeal::String::tryParse(args[i], &current_gem) && current_gem<9 && current_gem>0)
                 {
                     current_gem--; //base 0
                     if (Zeal::EqGame::get_char_info()->MemorizedSpell[current_gem] != -1)

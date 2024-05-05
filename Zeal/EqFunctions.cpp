@@ -98,17 +98,46 @@ namespace Zeal
 			else
 				return 1.0f;
 		}
-
+		int* get_sound_manager()
+		{
+			return (int*)(*(int*)0x63dea8);
+		}
 		Zeal::EqStructures::EQCHARINFO* get_char_info()
 		{
 			return (Zeal::EqStructures::EQCHARINFO*)(*(int*)0x7F94E8);
+		}
+		void do_autoattack(bool enabled)
+		{
+			reinterpret_cast<void(__thiscall*)(int, bool)>(0x5493b5)(0x798540, enabled);
 		}
 		Zeal::EqStructures::ViewActor* get_view_actor()
 		{
 			Zeal::EqStructures::ViewActor* v = *(Zeal::EqStructures::ViewActor**)Zeal::EqGame::ViewActor;
 			return v;
 		}
+		UINT get_eq_time()
+		{
+			return reinterpret_cast<UINT(__stdcall*)()>(0x4f35c7)();
+		}
+		int get_eq_main()
+		{
+			return *(int*)0x7f9574;
+		}
+		void SetMusicSelection(int number, bool enabled)
+		{
+			int* sound_manager = get_sound_manager();
+			if (sound_manager)
+				reinterpret_cast<void(__thiscall*)(int*, int, bool)>(0x4d54c1)(get_sound_manager(), number, enabled);
+		}
+		bool CanIHitTarget(float dist)
+		{
+			return reinterpret_cast<bool(__thiscall*)(Zeal::EqStructures::Entity*, Zeal::EqStructures::Entity*, float )>(0x509E09)(get_self(), get_target(), dist);
 
+		}
+		bool do_attack(uint8_t type, uint8_t p2)
+		{
+			return reinterpret_cast<bool(__thiscall*)(Zeal::EqStructures::Entity * player, uint8_t type, uint8_t p2, Zeal::EqStructures::Entity * target)>(0x50A0F8)(get_self(), type, p2, get_target());
+		}
 		Zeal::EqStructures::Entity* get_view_actor_entity()
 		{
 			return get_view_actor()->Entity;
@@ -678,7 +707,9 @@ namespace Zeal
 			}
 			void Memorize(int book_index, int gem_index)
 			{
-				if (Windows->SpellBook && !Windows->SpellBook->IsVisible)
+				if (!Windows->SpellBook)
+					return;
+				if (!Windows->SpellBook->IsVisible)
 					Zeal::EqGame::Spells::OpenBook();
 				Windows->SpellBook->BeginMemorize(book_index, gem_index, false);
 			}
@@ -697,20 +728,20 @@ namespace Zeal
 			bool spellbook_window_open()
 			{
 				// ISSUE: There is currently a small edge case where chat scrollbar usage can cause the value we're checking to flicker.
+				// ISSUE: Spamming chat while in spellboolk ultimately causes chat to scroll which makes the value flicker like the above issue.
 				HMODULE dx8 = GetModuleHandleA("eqgfx_dx8.dll");
 				// feedback/help window increase offset of pointer by 44, but they also get hit by game_wants_input(), so don't bother check them.
 				if (dx8)
 				{
-					int offset = 0;
-					for (size_t i = 0; i < EQ_NUM_SPELL_GEMS; ++i) {
-						if (Zeal::EqGame::get_self()->CharInfo->MemorizedSpell[i] != USHRT_MAX) {
-							offset += 88;
-						}
-					}
+					int offset = EQ_NUM_SPELL_GEMS * 88;
+					for (size_t i = 0; i < EQ_NUM_SPELL_GEMS; ++i)
+						if (Zeal::EqGame::get_char_info()->MemorizedSpell[i] == -1)
+							offset -= 88;
+
 					if (Zeal::EqGame::get_target()) { offset += 44; }
-					bool view_button_clicked = (*(DWORD*)((DWORD)dx8 + (0x3CD1C4 + offset)) != ULONG_MAX); // weird offset edge case (view hotkey not included)
+					bool view_button_clicked = *(DWORD*)((DWORD)dx8 + (0x3CD1C4 + offset)) != ULONG_MAX; // weird offset edge case (view hotkey not included)
 					if (view_button_clicked) { offset += 44; }
-					return (*(DWORD*)((DWORD)dx8 + (0x3CD1C4 + offset)) == ULONG_MAX);
+					return *(DWORD*)((DWORD)dx8 + (0x3CD1C4 + offset)) == ULONG_MAX;
 				}
 				else
 				{

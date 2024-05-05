@@ -111,9 +111,6 @@
     <ClInclude Include="chat.h">
       <Filter>Header Files\hooks</Filter>
     </ClInclude>
-    <ClInclude Include="StringUtil.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="outputfile.h">
       <Filter>Header Files\other</Filter>
     </ClInclude>
@@ -166,6 +163,21 @@
       <Filter>Header Files\ui</Filter>
     </ClInclude>
     <ClInclude Include="ui_loot.h">
+      <Filter>Header Files\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="autofire.h">
+      <Filter>Header Files\hooks</Filter>
+    </ClInclude>
+    <ClInclude Include="string_util.h">
+      <Filter>Header Files\helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="tooltip.h">
+      <Filter>Header Files\hooks</Filter>
+    </ClInclude>
+    <ClInclude Include="ui_raid.h">
+      <Filter>Header Files\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="ui_guild.h">
       <Filter>Header Files\ui</Filter>
     </ClInclude>
   </ItemGroup>
@@ -251,7 +263,7 @@
     <ClCompile Include="melody.cpp">
       <Filter>Source Files\hooks</Filter>
     </ClCompile>
-    <ClCompile Include="StringUtil.cpp">
+    <ClCompile Include="string_util.cpp">
       <Filter>Source Files\helpers</Filter>
     </ClCompile>
     <ClCompile Include="ui_options.cpp">
@@ -264,6 +276,21 @@
       <Filter>Source Files\ui</Filter>
     </ClCompile>
     <ClCompile Include="ui_loot.cpp">
+      <Filter>Source Files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="autofire.cpp">
+      <Filter>Source Files\hooks</Filter>
+    </ClCompile>
+    <ClCompile Include="EqPackets.h">
+      <Filter>Header Files\everquest</Filter>
+    </ClCompile>
+    <ClCompile Include="tooltip.cpp">
+      <Filter>Source Files\hooks</Filter>
+    </ClCompile>
+    <ClCompile Include="ui_raid.cpp">
+      <Filter>Source Files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="ui_guild.cpp">
       <Filter>Source Files\ui</Filter>
     </ClCompile>
   </ItemGroup>

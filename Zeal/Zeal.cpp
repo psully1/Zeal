@@ -17,6 +17,7 @@ ZealService::ZealService()
 	eqstr_hook = std::make_shared<eqstr>(this);
 	spell_sets = std::make_shared<SpellSets>(this);
 	item_displays = std::make_shared<ItemDisplay>(this, ini.get());
+	tooltips = std::make_shared<tooltip>(this, ini.get());;
 	this->apply_patches();
 
 	camera_mods = std::make_shared<CameraMods>(this, ini.get());
@@ -30,12 +31,33 @@ ZealService::ZealService()
 	netstat = std::make_shared<Netstat>(this, ini.get());
 	ui = std::make_shared<ui_manager>(this, ini.get());
 	melody = std::make_shared<Melody>(this, ini.get());
+	autofire = std::make_shared<AutoFire>(this, ini.get());
 
 	this->basic_binds();
 }
 
 void ZealService::basic_binds()
 {
+	binds_hook->replace_cmd(28, [this](int state)
+		{
+			if (state && !Zeal::EqGame::EqGameInternal::UI_ChatInputCheck())
+			{
+				Zeal::EqStructures::Entity* ent = ZealService::get_instance()->cycle_target->get_nearest_ent(250, 0);
+				if (ent)
+					Zeal::EqGame::set_target(ent);
+			}
+			return true;
+		}); //nearest pc
+	binds_hook->replace_cmd(29, [this](int state)
+		{
+			if (state && !Zeal::EqGame::EqGameInternal::UI_ChatInputCheck())
+			{
+				Zeal::EqStructures::Entity* ent = ZealService::get_instance()->cycle_target->get_nearest_ent(250, 1);
+				if (ent)
+					Zeal::EqGame::set_target(ent);
+			}
+			return true;
+		}); //nearest npc
 	binds_hook->replace_cmd(3, [this](int state) 
 	{
 		movement->handle_movement_binds(3, state);
@@ -123,6 +145,7 @@ ZealService* ZealService::get_instance()
 ZealService::~ZealService()
 {
 	hooks.reset();
+	autofire.reset();
 	melody.reset();
 	ui.reset();
 	netstat.reset();
@@ -144,4 +167,5 @@ ZealService::~ZealService()
 	callbacks.reset();
 	commands_hook.reset();
 	ini.reset();
+	
 }

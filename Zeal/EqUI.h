@@ -1,5 +1,6 @@
 #pragma once
 #include "EqStructures.h"
+#include "memory.h"
 namespace Zeal
 {
 	namespace EqUI
@@ -156,7 +157,7 @@ namespace Zeal
 
 		struct BasicWnd
 		{
-			BasicWnd() {};
+			//BasicWnd() {};
 			void SetFocus()
 			{
 				reinterpret_cast<void(__thiscall*)(const BasicWnd*)>(0x572290)(this);
@@ -175,6 +176,10 @@ namespace Zeal
 			BasicWnd* GetChildItem(CXSTR name)
 			{
 				return reinterpret_cast<BasicWnd*(__thiscall*)(const BasicWnd*, CXSTR)>(0x570320)(this, name);
+			}
+			void CreateChildren()
+			{
+				reinterpret_cast<BasicWnd*(__thiscall*)(const BasicWnd*)>(0x56f4f0)(this);
 			}
 			int WndNotification(int a1, int a2, int a3)
 			{
@@ -277,7 +282,10 @@ namespace Zeal
 			/*0x124*/   DWORD   Unknown0x124; /* CTextureAnimation */
 			/*0x128*/   DWORD   Unknown0x128; /* CTextureAnimation */
 			/*0x12c*/   DWORD   ContextMenu; /* CTextureAnimation its an id for the menu*/
-			/*0x130*/	DWORD   Unknown0x130; /* CTextureAnimation */
+			/*0x130*/	BYTE    Unknown0x130; /* CTextureAnimation */
+			/*0x131*/	BYTE    Unknown0x131; /* CTextureAnimation */
+			/*0x132*/	BYTE    Unknown0x132; /* CTextureAnimation */
+			/*0x133*/	BYTE    Unknown0x133; /* CTextureAnimation */
 		};
 		struct ItemDisplayWnd : EQWND
 		{

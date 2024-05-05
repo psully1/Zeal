@@ -3,7 +3,7 @@
 #include "EqAddresses.h"
 #include "EqFunctions.h"
 #include "Zeal.h"
-#include "StringUtil.h"
+#include "string_util.h"
 #include <algorithm>
 
 std::string ReadFromClipboard() {
@@ -71,8 +71,11 @@ std::string generateTimestampedString(const char* message) {
     return oss.str();
 }
 
+
 void __fastcall PrintChat(int t, int unused, const char* data, short color_index, bool u)
 {
+    if (!data || strlen(data) == 0)
+        return;
     chat* c = ZealService::get_instance()->chat_hook.get();
     if (color_index == 4 && c->bluecon)
         color_index = 325;
@@ -282,24 +285,39 @@ void chat::set_input_color(Zeal::EqUI::ARGBCOLOR col)
         active_edit->TextColor = col; */
 }
 
+
 chat::chat(ZealService* zeal, IO_ini* ini)
 {
-    zeal->commands_hook->add("/timestamp", { "/tms" },
+    //zeal->callbacks->add_packet([this](UINT opcode, char* buffer, UINT size) {
+
+    //
+    //    if (opcode == 0x4058 || opcode == 0x404A)
+    //    {
+    //        Zeal::EqGame::print_chat("Opcode: 0x%x Size: %i Buffer: %s", opcode, size, Zeal::String::bytes_to_hex(buffer, size).c_str());
+    //    }
+    //if (opcode == 0x4236)
+    //{
+    //    Zeal::EqGame::print_chat("Opcode: 0x%x Size: %i Buffer: %s", opcode, size, Zeal::String::bytes_to_hex(buffer, size).c_str());
+    //}
+    //
+    //return false;
+    //}, callback_type::WorldMessage);
+    zeal->commands_hook->add("/timestamp", { "/tms" }, "Toggles timestamps on chat windows.",
         [this](std::vector<std::string>& args) {
             set_timestamp(!timestamps);
             return true; //return true to stop the game from processing any further on this command, false if you want to just add features to an existing cmd
         });
-    zeal->commands_hook->add("/zealinput", { "/zinput" },
+    zeal->commands_hook->add("/zealinput", { "/zinput" }, "Toggles zeal input which gives you a more modern input feel.",
         [this](std::vector<std::string>& args) {
             set_input(!zealinput);
             return true; //return true to stop the game from processing any further on this command, false if you want to just add features to an existing cmd
         });
-    zeal->commands_hook->add("/bluecon", { },
+    zeal->commands_hook->add("/bluecon", { }, "Toggles the custom color for blue con that you can adjust in options.",
         [this](std::vector<std::string>& args) {
             set_bluecon(!bluecon);
             return true; //return true to stop the game from processing any further on this command, false if you want to just add features to an existing cmd
         });
-    zeal->commands_hook->add("/loc", { },
+    zeal->commands_hook->add("/loc", { }, "Adds noprint arguments to /loc to not log the location to your chat.",
         [this](std::vector<std::string>& args) {
             if (args.size() > 1 && args[1]=="noprint")
             {

@@ -3,7 +3,7 @@
 #include "EqAddresses.h"
 #include "EqFunctions.h"
 #include "Zeal.h"
-#include "StringUtil.h"
+#include "string_util.h"
 //void __fastcall finalize_loot(int uk, int lootwnd_ptr)
 //{
 //	Zeal::EqStructures::Entity* corpse =  Zeal::EqGame::get_active_corpse();
@@ -18,6 +18,10 @@ void looting::set_hide_looted(bool val)
 	hide_looted = val;
 	ZealService::get_instance()->ini->setValue<bool>("Zeal", "HideLooted", hide_looted);
 	ZealService::get_instance()->ui->options->UpdateOptions();
+	if (hide_looted)
+		Zeal::EqGame::print_chat("Corpses will be hidden after looting.");
+	else
+		Zeal::EqGame::print_chat("Corpses will no longer be hidden after looting.");
 }
 
 
@@ -66,6 +70,11 @@ void looting::init_ui()
 
 void looting::looted_item()
 {
+	if (Zeal::EqGame::get_char_info()->CursorItem) 
+	{
+		loot_all = false;
+		return;
+	}
 	if (loot_all && Zeal::EqGame::Windows && Zeal::EqGame::Windows->Loot && Zeal::EqGame::Windows->Loot->IsVisible)
 	{
 		std::string corpse_name = Zeal::EqGame::strip_name(Zeal::EqGame::get_active_corpse()->Name);
@@ -113,37 +122,38 @@ looting::looting(ZealService* zeal)
 	zeal->callbacks->add_generic([this]() {
 		if (!Zeal::EqGame::Windows || !Zeal::EqGame::Windows->Loot || !Zeal::EqGame::Windows->Loot->IsVisible)
 		{
+			delay_frames = -1;
 			loot_all = false;
 			return;
 		}
+		if (delay_frames == 0)
+		{
+			looted_item();
+			delay_frames--;
+		}
+		else if (delay_frames > 0)
+			delay_frames--;
 		}, callback_type::MainLoop);
 		zeal->callbacks->add_packet([this](UINT opcode, char* buffer, UINT len) {
 			if (opcode == 0x4031)
-				looted_item();
-		//	if (opcode == 0x4236)
-		//{
-		//	formatted_msg* data = (formatted_msg*)buffer;
-		//	if (data->string_id == 467) //467 --You have looted a %1.--
-		//		looted_item();
-		//}
+			{
+				delay_frames = 10;
+				
+			}
 		return false; 
 		});
-	zeal->commands_hook->add("/hidecorpse", { "/hc", "/hideco", "/hidec" },
+	zeal->commands_hook->add("/hidecorpse", { "/hc", "/hideco", "/hidec" }, "Adds looted argument to hidecorpse.",
 		[this](std::vector<std::string>& args) {
-			if (args.size() > 1 && StringUtil::caseInsensitive(args[1], "looted"))
+			if (args.size() > 1 && Zeal::String::compare_insensitive(args[1], "looted"))
 			{
 				set_hide_looted(!hide_looted);
-				if (hide_looted)
-					Zeal::EqGame::print_chat("Corpses will be hidden after looting.");
-				else
-					Zeal::EqGame::print_chat("Corpses will no longer be hidden after looting.");
-				return true; //return true to stop the game from processing any further on this command, false if you want to just add features to an existing cmd
+				return true;
 			}
-			if (args.size() > 1 && args[1] == "none")
-			{
-				set_hide_looted(false);
-				return false; 
-			}
+			//if (args.size() > 1 && Zeal::String::compare_insensitive(args[1], "none"))
+			//{
+			//	set_hide_looted(false);
+			//	return false; 
+			//}
 			return false;
 		});
 	

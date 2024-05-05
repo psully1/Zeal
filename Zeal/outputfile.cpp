@@ -1,6 +1,6 @@
 #include "outputfile.h"
 #include "Zeal.h"
-#include "StringUtil.h"
+#include "string_util.h"
 #include <fstream>
 
 enum EquipSlot
@@ -59,7 +59,7 @@ static std::string IDToEquipSlot(int equipSlot)
 
 static bool ItemIsContainer(Zeal::EqStructures::EQITEMINFO* item)
 {
-  return (item->OpenType == 1 && item->Container.Capacity > 0);
+  return (item->Type == 1 && item->Container.Capacity > 0);
 }
 
 static bool ItemIsStackable(Zeal::EqStructures::EQITEMINFO* item)
@@ -80,7 +80,7 @@ void OutputFile::export_inventory(std::vector<std::string>& args)
     Zeal::EqStructures::EQITEMINFO* item = self->CharInfo->InventoryItem[i];
     // EQITEMINFO->EquipSlot value only updates when a load happens. Don't use it for this.
     if (item) {
-      oss << IDToEquipSlot(i) << t << item->Name << t << item->Id << t << 1 << t << 0 << std::endl;
+      oss << IDToEquipSlot(i) << t << item->Name << t << item->ID << t << 1 << t << 0 << std::endl;
     }
     else {
       oss << IDToEquipSlot(i) << t << "Empty" << t << 0 << t << 0 << t << 0 << std::endl;
@@ -93,12 +93,12 @@ void OutputFile::export_inventory(std::vector<std::string>& args)
       if (item) {
         if (ItemIsContainer(item)) {
           int capacity = static_cast<int>(item->Container.Capacity);
-          oss << "General" << i + 1 << t << item->Name << t << item->Id << t << 1 << t << capacity << std::endl;
+          oss << "General" << i + 1 << t << item->Name << t << item->ID << t << 1 << t << capacity << std::endl;
           for (int j = 0; j < capacity; ++j) {
             Zeal::EqStructures::EQITEMINFO* bag_item = item->Container.Item[j];
             if (bag_item) {
               int stack_count = ItemIsStackable(bag_item) ? static_cast<int>(bag_item->Common.StackCount) : 1;
-              oss << "General" << i + 1 << "-Slot" << j + 1 << t << bag_item->Name << t << bag_item->Id << t << stack_count << t << 0 << std::endl;
+              oss << "General" << i + 1 << "-Slot" << j + 1 << t << bag_item->Name << t << bag_item->ID << t << stack_count << t << 0 << std::endl;
             }
             else {
               oss << "General" << i + 1 << "-Slot" << j + 1 << t << "Empty" << t << 0 << t << 0 << t << 0 << std::endl;
@@ -107,7 +107,7 @@ void OutputFile::export_inventory(std::vector<std::string>& args)
         }
         else {
           int stack_count = ItemIsStackable(item) ? static_cast<int>(item->Common.StackCount) : 1;
-          oss << "General" << i + 1 << t << item->Name << t << item->Id << t << stack_count << t << 0 << std::endl;
+          oss << "General" << i + 1 << t << item->Name << t << item->ID << t << stack_count << t << 0 << std::endl;
         }
       }
       else {
@@ -127,12 +127,12 @@ void OutputFile::export_inventory(std::vector<std::string>& args)
     if (item) {
       if (ItemIsContainer(item)) {
         int capacity = static_cast<int>(item->Container.Capacity);
-        oss << "Held" << t << item->Name << t << item->Id << t << 1 << t << capacity << std::endl;
+        oss << "Held" << t << item->Name << t << item->ID << t << 1 << t << capacity << std::endl;
         for (int i = 0; i < capacity; ++i) {
           Zeal::EqStructures::EQITEMINFO* bag_item = item->Container.Item[i];
           if (bag_item) {
             int stack_count = ItemIsStackable(bag_item) ? static_cast<int>(bag_item->Common.StackCount) : 1;
-            oss << "Held" << "-Slot" << i + 1 << t << bag_item->Name << t << bag_item->Id << t << stack_count << t << 0 << std::endl;
+            oss << "Held" << "-Slot" << i + 1 << t << bag_item->Name << t << bag_item->ID << t << stack_count << t << 0 << std::endl;
           }
           else {
             oss << "Held" << "-Slot" << i + 1 << t << "Empty" << t << 0 << t << 0 << t << 0 << std::endl;
@@ -141,7 +141,7 @@ void OutputFile::export_inventory(std::vector<std::string>& args)
       }
       else {
         int stack_count = ItemIsStackable(item) ? static_cast<int>(item->Common.StackCount) : 1;
-        oss << "Held" << t << item->Name << t << item->Id << t << stack_count << t << 0 << std::endl;
+        oss << "Held" << t << item->Name << t << item->ID << t << stack_count << t << 0 << std::endl;
       }
     }
     else {
@@ -164,12 +164,12 @@ void OutputFile::export_inventory(std::vector<std::string>& args)
       if (item) {
         if (ItemIsContainer(item)) {
           int capacity = static_cast<int>(item->Container.Capacity);
-          oss << "Bank" << i + 1 << t << item->Name << t << item->Id << t << 1 << t << capacity << std::endl;
+          oss << "Bank" << i + 1 << t << item->Name << t << item->ID << t << 1 << t << capacity << std::endl;
           for (int j = 0; j < capacity; ++j) {
             Zeal::EqStructures::EQITEMINFO* bag_item = item->Container.Item[j];
             if (bag_item) {
               int stack_count = ItemIsStackable(bag_item) ? static_cast<int>(bag_item->Common.StackCount) : 1;
-              oss << "Bank" << i + 1 << "-Slot" << j + 1 << t << bag_item->Name << t << bag_item->Id << t << stack_count << t << 0 << std::endl;
+              oss << "Bank" << i + 1 << "-Slot" << j + 1 << t << bag_item->Name << t << bag_item->ID << t << stack_count << t << 0 << std::endl;
             }
             else {
               oss << "Bank" << i + 1 << "-Slot" << j + 1 << t << "Empty" << t << 0 << t << 0 << t << 0 << std::endl;
@@ -178,7 +178,7 @@ void OutputFile::export_inventory(std::vector<std::string>& args)
         }
         else {
           int stack_count = ItemIsStackable(item) ? static_cast<int>(item->Common.StackCount) : 1;
-          oss << "Bank" << i + 1 << t << item->Name << t << item->Id << t << stack_count << t << 0 << std::endl;
+          oss << "Bank" << i + 1 << t << item->Name << t << item->ID << t << stack_count << t << 0 << std::endl;
         }
       }
       else {
@@ -266,7 +266,7 @@ void OutputFile::write_to_file(std::string data, std::string file_arg, std::stri
 
 OutputFile::OutputFile(ZealService* zeal)
 {
-  zeal->commands_hook->add("/outputfile", { "/output", "/out" },
+  zeal->commands_hook->add("/outputfile", { "/output", "/out" }, "Outputs your inventory,spellbook, or raidlist to file.",
     [this](std::vector<std::string>& args) {
       if (args.size() == 1 || args.size() > 3)
       {
@@ -274,17 +274,17 @@ OutputFile::OutputFile(ZealService* zeal)
         return true;
       }
       if (args.size() > 1) {
-        if (StringUtil::caseInsensitive(args[1], "inventory"))
+        if (Zeal::String::compare_insensitive(args[1], "inventory"))
         {
           Zeal::EqGame::print_chat("Outputting inventory...");
           export_inventory(args);
         }
-        else if (StringUtil::caseInsensitive(args[1], "spellbook"))
+        else if (Zeal::String::compare_insensitive(args[1], "spellbook"))
         {
           Zeal::EqGame::print_chat("Outputting spellbook...");
           export_spellbook(args);
         }
-        else if (StringUtil::caseInsensitive(args[1], "raidlist"))
+        else if (Zeal::String::compare_insensitive(args[1], "raidlist"))
           export_raidlist(args);
       }
       return true;

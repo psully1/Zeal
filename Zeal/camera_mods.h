@@ -27,7 +27,9 @@ public:
 	void set_smoothing(bool val);
 	void callback_main();
 	void callback_render();
+	void callback_zone();
 	void callback_characterselect();
+	void callback_endmainloop();
 	bool update_cam(); //returns true on collision
 	void mouse_wheel(int delta);
 	void update_zoom(float zoom);
@@ -37,11 +39,14 @@ public:
 	void handle_cycle_camera_views(int cmd, bool is_down);
 	void proc_rmousedown(int x, int y);
 	int pan_delay = 200;
+	float fov = 45;
 	void set_pan_delay(int value_ms);
+	void set_fov(float fov);
 	void update_sensitivity();
 	CameraMods(class ZealService* pHookWrapper, class IO_ini* ini);
 	~CameraMods();
 private:
+	bool main_loop_ended = false;
 	bool check_snap = false;
 	ULONGLONG lmouse_time = 0;
 	POINT lmouse_cursor_pos;

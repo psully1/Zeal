@@ -1,6 +1,6 @@
 #include "spellsets.h"
 #include "Zeal.h"
-#include "StringUtil.h"
+#include "string_util.h"
 #include "EqAddresses.h"
 #include "SpellCategories.h"
 #include <algorithm>
@@ -240,7 +240,9 @@ bool compareBySpellLevel(const Zeal::EqStructures::SPELL* a, const Zeal::EqStruc
     Zeal::EqStructures::EQCHARINFO* self_char = Zeal::EqGame::get_self()->CharInfo;
     int aLevel = a->Level[self_char->Class - 1];
     int bLevel = b->Level[self_char->Class - 1];
-    return aLevel > bLevel;
+    if (aLevel != bLevel)
+        return aLevel > bLevel;
+    return a->Name > b->Name;
 }
 
 void SpellSets::destroy_context_menus()
@@ -349,6 +351,7 @@ void SpellSets::create_context_menus(bool force)
         //spellset_menu->fnTable->basic.Deactivate = SpellSetDeactivate;
         spellsets.clear();
         spellsets = ini->getSectionNames();
+        std::sort(spellsets.begin(), spellsets.end());
         int header_index = spellset_menu->AddMenuItem("Spell Sets", 0x30000, false);
         spellset_menu->EnableLine(header_index, false);
         //spellset_menu->SetItemColor(header_index, { 255,255,255,255 });
@@ -397,7 +400,7 @@ SpellSets::SpellSets(ZealService* zeal)
     // wrap it for now to prevent users form crashing themselves on oldui until functionality potentially gets added.
     if (Zeal::EqGame::is_new_ui())
     {
-        zeal->commands_hook->add("/spellset", {},
+        zeal->commands_hook->add("/spellset", {}, "Load, save, delete or list your spellsets.",
             [this, zeal](std::vector<std::string>& args) {
                 if (args.size() < 3)
                 {
@@ -405,24 +408,24 @@ SpellSets::SpellSets(ZealService* zeal)
                 }
                 else
                 {
-                    if (StringUtil::caseInsensitive(args[1], "test"))
+                    if (Zeal::String::compare_insensitive(args[1], "test"))
                     {
                         destroy_context_menus();
                         create_context_menus(true);
                     }
-                    if (StringUtil::caseInsensitive(args[1], "save"))
+                    if (Zeal::String::compare_insensitive(args[1], "save"))
                     {
                         save(args[2]);
                     }
-                    if (StringUtil::caseInsensitive(args[1], "delete") || StringUtil::caseInsensitive(args[1], "remove"))
+                    if (Zeal::String::compare_insensitive(args[1], "delete") || Zeal::String::compare_insensitive(args[1], "remove"))
                     {
                         remove(args[2]);
                     }
-                    if (StringUtil::caseInsensitive(args[1], "load"))
+                    if (Zeal::String::compare_insensitive(args[1], "load"))
                     {
                         load(args[2]);
                     }
-                    if (StringUtil::caseInsensitive(args[1], "list"))
+                    if (Zeal::String::compare_insensitive(args[1], "list"))
                     {
                         set_ini();
                         std::vector<std::string> sets = ini->getSectionNames();

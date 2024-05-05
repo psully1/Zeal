@@ -82,10 +82,16 @@ namespace Zeal
 		{
 			bool spellbook_window_open();
 		}
+		UINT get_eq_time();
+		int get_eq_main();
+		void do_autoattack(bool enabled);
+		bool CanIHitTarget(float dist);
+		bool do_attack(uint8_t type, uint8_t p2);
 		void do_inspect(Zeal::EqStructures::Entity* player);
 		void execute_cmd(UINT cmd, bool isdown, int unk2);
 		EqStructures::Everquest* get_eq();
 		int get_gamestate();
+		void SetMusicSelection(int number, bool enabled);
 		bool is_new_ui();
 		HWND get_game_window();
 		bool is_in_char_select();
