@@ -110,10 +110,10 @@ namespace Zeal
 		Zeal::EqStructures::ActorLocation get_actor_location(int actor);
 		bool can_target(Zeal::EqStructures::Entity* ent);
 		bool is_view_actor_me();
+		void print_chat_hook(const char* format, ...);
 		void print_chat(std::string data);
 		void print_chat(const char* format, ...);
 		void print_chat(short color, const char* format, ...);
-		void print_chat_zeal(const char* data, short color, bool un);
 		void set_target(Zeal::EqStructures::Entity* target);
 		bool can_move();
 		Zeal::EqStructures::EQCHARINFO* get_char_info();

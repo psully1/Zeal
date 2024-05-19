@@ -1,6 +1,7 @@
 #pragma once
 #include "EqStructures.h"
 #include "memory.h"
+#include <map>
 namespace Zeal
 {
 	namespace EqUI
@@ -109,6 +110,7 @@ namespace Zeal
 		};
 		struct CXSTR {
 			CXSTR() {};
+
 			CXSTR(const char* data)
 			{
 				reinterpret_cast<void(__thiscall*)(const CXSTR*, const char*)>(0x575F30)(this, data);
@@ -121,6 +123,10 @@ namespace Zeal
 			{
 				reinterpret_cast<void(__thiscall*)(const CXSTR*, int, int)>(0x575A60)(this, length, encoding);
 				
+			}
+			void FreeRep()
+			{
+				reinterpret_cast<void(__thiscall*)(const CXSTR*, pCXSTR*)>(0x575DC0)(this, Data);
 			}
 			pCXSTR* Data;
 		};
@@ -154,7 +160,11 @@ namespace Zeal
 			ARGBCOLOR() : A{}, R{}, G{}, B{} {};
 
 		};
-
+		struct ControlTemplate
+		{
+			char Unknown0x0[0x20];
+			pCXSTR* Item;
+		};
 		struct BasicWnd
 		{
 			//BasicWnd() {};
@@ -244,7 +254,7 @@ namespace Zeal
 			/*0x0f9*/   BYTE    Unused0x0f9[0x3];
 			/*0x0fc*/   union {
 
-				struct _CXSTR* SidlText;
+				struct pCXSTR* SidlText;
 				DWORD Items;
 			};
 			/*0x100*/   union {
@@ -252,6 +262,7 @@ namespace Zeal
 				struct _CXSTR* SidlScreen;
 				DWORD   SlotID;
 				DWORD	Caret_Start;
+				DWORD	ItemCount;
 			};
 			union {
 				/*0x104*/   LPVOID SidlPiece; /* CScreenPieceTemplate (important) */
@@ -287,6 +298,40 @@ namespace Zeal
 			/*0x132*/	BYTE    Unknown0x132; /* CTextureAnimation */
 			/*0x133*/	BYTE    Unknown0x133; /* CTextureAnimation */
 		};
+
+		struct ListWnd : EQWND
+		{
+			ListWnd() {};
+			int AddString(std::string str)
+			{
+				return reinterpret_cast<int (__thiscall*)(const ListWnd*, CXSTR, UINT, UINT, UINT)>(0x5797A0)(this, CXSTR(str), 0xffffffff, 0, 0);
+			}
+			void SetItemText(std::string str, int row, int column)
+			{
+				reinterpret_cast<void(__thiscall*)(const ListWnd*, int, int, CXSTR)>(0x579DC0)(this, row, column, CXSTR(str));
+			}
+			void SetItemData(int row) //not sure why this is needed
+			{
+				reinterpret_cast<void(__thiscall*)(const ListWnd*, int, int)>(0x579D70)(this, row, row);
+			}
+			void Sort(int col) 
+			{
+				reinterpret_cast<void(__thiscall*)(const ListWnd*, int)>(0x57cb00)(this,col);
+			}
+			void DeleteAll()
+			{
+				reinterpret_cast<void(__thiscall*)(const ListWnd*)>(0x579530)(this);
+			}
+			int GetItemData(int row)
+			{
+				return reinterpret_cast<int (__thiscall*)(const ListWnd*, int)>(0x578E80)(this, row);
+			}
+			ListWnd* GetItemText(CXSTR* buffer, int row, int col)
+			{
+				return reinterpret_cast<ListWnd*(__thiscall*)(const ListWnd*, CXSTR*, int, int)>(0x578ed0)(this, buffer, row, col);
+			}
+		};
+
 		struct ItemDisplayWnd : EQWND
 		{
 			ItemDisplayWnd() {};

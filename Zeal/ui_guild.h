@@ -5,7 +5,8 @@
 class ui_guild
 {
 public:
-	Zeal::EqUI::BasicWnd* guild;
+	Zeal::EqUI::BasicWnd* guild=nullptr;
+	Zeal::EqUI::ListWnd* members=nullptr;
 	ui_guild(class ZealService* zeal, class IO_ini* ini, class ui_manager* mgr);
 	~ui_guild();
 private:

@@ -68,7 +68,7 @@ void CameraMods::mouse_wheel(int delta)
 }
 
 
-void CameraMods::toggle_zeal_cam(bool enabled)
+void CameraMods::toggle_zeal_cam(bool enabled, bool reset_pitch)
 {
     Zeal::EqStructures::Entity* self = Zeal::EqGame::get_controlled();
     if (enabled)
@@ -76,7 +76,8 @@ void CameraMods::toggle_zeal_cam(bool enabled)
         set_camera_view(Zeal::EqEnums::CameraView::ZealCam);
         if (self) 
         {
-            zeal_cam_pitch = camera_math::pitch_to_normal(self->Pitch);
+            if (reset_pitch)
+                zeal_cam_pitch = camera_math::pitch_to_normal(self->Pitch);
             zeal_cam_yaw = self->Heading;
         }
         desired_zoom += zoom_speed;
@@ -415,13 +416,13 @@ void CameraMods::update_fps_sensitivity()
         fps = 1000.0f / elapsedTime;
     }
 
-    sensitivity_x = user_sensitivity_x * (fps / 144.f);
-    sensitivity_y = user_sensitivity_y * (fps / 144.f);
+    sensitivity_x = user_sensitivity_x;// / (fps / 144.f);
+    sensitivity_y = user_sensitivity_y;// / (fps / 144.f);
 
     if (get_camera_view() == Zeal::EqEnums::CameraView::ZealCam)
     {
-        sensitivity_x = user_sensitivity_x_3rd * (fps / 144.f);
-        sensitivity_y = user_sensitivity_y_3rd * (fps / 144.f);
+        sensitivity_x = user_sensitivity_x_3rd;// / (fps / 144.f);
+        sensitivity_y = user_sensitivity_y_3rd;// / (fps / 144.f);
     }
 
     float current_sens = (float)(*(byte*)0x798b0c);
@@ -438,6 +439,7 @@ void CameraMods::callback_render()
         { 
             if (Zeal::EqGame::get_self()->Position.Dist(Zeal::EqGame::get_char_info()->ZoneEnter) != 0)
                 update_cam();
+            
         }
     }
 }
@@ -452,7 +454,7 @@ void CameraMods::callback_main()
         update_fps_sensitivity();
         tick_key_move();
 
-        if (prev_view != get_camera_view() && Zeal::EqGame::get_self()) //this simply checks if your camera view has changed
+        if (prev_view != get_camera_view() && Zeal::EqGame::get_self() && Zeal::EqGame::is_in_game()) //this simply checks if your camera view has changed
         {
             if (get_camera_view() != Zeal::EqEnums::CameraView::ZealCam)
             {
@@ -467,7 +469,7 @@ void CameraMods::callback_main()
     }
     if (main_loop_ended && prev_view == Zeal::EqEnums::CameraView::ZealCam)
     {
-        toggle_zeal_cam(true);
+        toggle_zeal_cam(true, false);
     }
     main_loop_ended = false;
     prev_view = get_camera_view();
@@ -574,12 +576,14 @@ void CameraMods::callback_endmainloop()
 int SetCameraLens(int a1, float fov, float aspect_ratio, float a4, float a5)
 {
     ZealService* zeal = ZealService::get_instance();
-    //   Zeal::EqGame::print_chat("a1: %i a2: %f a3: %f a4: %f a5: %f", a1, fov, aspect_ratio, a5, a5);
     fov = zeal->camera_mods->fov;
     int rval = zeal->hooks->hook_map["SetCameraLens"]->original(SetCameraLens)(a1, fov, aspect_ratio, a4, a5);
-    Zeal::EqStructures::CameraInfo* ci = Zeal::EqGame::get_camera();
-    if (ci)
-        ci->FieldOfView = zeal->camera_mods->fov;
+    if (Zeal::EqGame::get_gamestate()!=GAMESTATE_PRECHARSELECT)
+    {
+        Zeal::EqStructures::CameraInfo* ci = Zeal::EqGame::get_camera(); 
+        if (ci)
+            ci->FieldOfView = zeal->camera_mods->fov;
+    }
     return rval;
 }
 

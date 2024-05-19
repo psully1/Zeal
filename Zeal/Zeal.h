@@ -1,13 +1,14 @@
 #pragma once
 #include "framework.h"
-#define ZEAL_VERSION "0.1.71"
-
+#define ZEAL_VERSION "0.1.76"
+static std::atomic<bool> exitFlag(false);
 class ZealService
 {
 public:
 	//hooks
 	std::shared_ptr<IO_ini> ini = nullptr;
 	std::shared_ptr<HookWrapper> hooks = nullptr;
+	std::shared_ptr<named_pipe> pipe = nullptr;
 	std::shared_ptr<looting> looting_hook = nullptr;
 	std::shared_ptr<labels> labels_hook = nullptr;
 	std::shared_ptr<Binds> binds_hook = nullptr;
@@ -36,13 +37,17 @@ public:
 	
 	ZealService();
 	~ZealService();
+	void init_crashreporter();
 	static ZealService* ptr_service;
 	//static data/functions to get a base ptr since some hook callbacks don't have the information required
 	static ZealService* get_instance();
 
 	bool exit = false;
 private:
+	std::thread render_thread;
+	BYTE orig_render_data[11];
 	void basic_binds();
 	void apply_patches();
+	void RenderThread();
 };
 

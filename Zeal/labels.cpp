@@ -4,6 +4,7 @@
 #include "EqFunctions.h"
 #include "EqUI.h"
 #include "Zeal.h"
+#include "json.hpp"
 
 void default_empty(Zeal::EqUI::CXSTR* str, bool* override_color, ULONG* color)
 {
@@ -135,10 +136,38 @@ void labels::print_debug_info(const char* format, ...)
 		debug_info += std::string(buffer);
 }
 
+
 void labels::callback_main()
 {
 
+	
 }
+
+bool labels::GetLabel(int EqType, std::string& str)
+{
+	Zeal::EqUI::CXSTR tmp("");
+	bool override = false;
+	ULONG color = 0;
+	bool val = GetLabelFromEq(EqType, (Zeal::EqUI::CXSTR*)&tmp, &override, &color);
+	if (tmp.Data)
+	{
+		str = tmp.Data->Text;
+		tmp.FreeRep();
+	}
+	return val;
+}
+int labels::GetGauge(int EqType, std::string& str)
+{
+	Zeal::EqUI::CXSTR tmp("");
+	int value = GetGaugeFromEq(EqType, (Zeal::EqUI::CXSTR*)&tmp);
+	if (tmp.Data)
+	{
+		str = tmp.Data->Text;
+		tmp.FreeRep();
+	}
+	return value;
+}
+
 
 labels::~labels()
 {
@@ -147,6 +176,19 @@ labels::~labels()
 
 labels::labels(ZealService* zeal)
 {
+	zeal->commands_hook->add("/labels", {}, "prints all labels",
+		[this](std::vector<std::string>& args) {
+			for (int i = 0; i < 200; i++)
+			{
+				Zeal::EqUI::CXSTR tmp("");
+				bool override = false;
+				ULONG color = 0;
+				GetLabelFromEq(i, (Zeal::EqUI::CXSTR*)&tmp, &override, &color);
+				if (tmp.Data)
+					Zeal::EqGame::print_chat("label: %i value: %s", i, tmp.Data->Text);
+			}
+			return true; //return true to stop the game from processing any further on this command, false if you want to just add features to an existing cmd
+		});
 	zeal->callbacks->add_generic([this]() { callback_main(); });
 	//zeal->hooks->Add("FinalizeLoot", Zeal::EqGame::EqGameInternal::fn_finalizeloot, finalize_loot, hook_type_detour);
 	zeal->hooks->Add("GetLabel", Zeal::EqGame::EqGameInternal::fn_GetLabelFromEQ, GetLabelFromEq, hook_type_detour);

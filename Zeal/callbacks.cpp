@@ -72,9 +72,9 @@ void __stdcall clean_up_ui()
 	zeal->hooks->hook_map["CleanUpUI"]->original(clean_up_ui)();
 }
 
-bool CallbackManager::invoke_packet(callback_type fn, UINT opcode, char* buffer, UINT len)
+bool CallbackManager::invoke_packet(callback_type cb_type, UINT opcode, char* buffer, UINT len)
 {
-	for (auto& fn : packet_functions[fn])
+	for (auto& fn : packet_functions[cb_type])
 	{
 		if (fn(opcode, buffer, len))
 			return true;
@@ -82,9 +82,9 @@ bool CallbackManager::invoke_packet(callback_type fn, UINT opcode, char* buffer,
 	return false;
 }
 
-bool CallbackManager::invoke_command(callback_type fn, UINT opcode, bool state)
+bool CallbackManager::invoke_command(callback_type cb_type, UINT opcode, bool state)
 {
-	for (auto& fn : cmd_functions[fn])
+	for (auto& fn : cmd_functions[cb_type])
 	{
 		if (fn(opcode, state))
 			return true;
@@ -114,6 +114,7 @@ void send_message_hk(int* connection, UINT opcode, char* buffer, UINT len, int u
 	//Zeal::EqGame::print_chat("Opcode %i   len: %i", opcode, len);
 	if (zeal->callbacks->invoke_packet(callback_type::SendMessage_, opcode, buffer, len))
 		return;
+
 	zeal->hooks->hook_map["SendMessage"]->original(send_message_hk)(connection, opcode, buffer, len, unknown);
 }
 
@@ -129,8 +130,20 @@ void executecmd_hk(UINT cmd, bool isdown, int unk2)
 	zeal->hooks->hook_map["executecmd"]->original(executecmd_hk)(cmd, isdown, unk2);
 }
 
+void msg_new_text(char* msg)
+{
+	ZealService* zeal = ZealService::get_instance();
+	if (!Zeal::EqGame::get_self())
+	{
+	//	Zeal::EqGame::print_chat("self was null during new text");
+		return;
+	}
+	zeal->hooks->hook_map["msg_new_text"]->original(msg_new_text)(msg);
+}
+
 CallbackManager::CallbackManager(ZealService* zeal)
 {
+	zeal->hooks->Add("msg_new_text", 0x4e25a1, msg_new_text, hook_type_detour);
 	zeal->hooks->Add("executecmd", 0x54050c, executecmd_hk, hook_type_detour);
 	zeal->hooks->Add("main_loop", 0x5473c3, main_loop_hk, hook_type_detour);
 	zeal->hooks->Add("Render", 0x4AA8BC, render_hk, hook_type_detour);

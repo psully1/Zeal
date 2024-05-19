@@ -4,6 +4,7 @@
 #include "EqFunctions.h"
 #include "Zeal.h"
 #include "string_util.h"
+#include "EqPackets.h"
 //void __fastcall finalize_loot(int uk, int lootwnd_ptr)
 //{
 //	Zeal::EqStructures::Entity* corpse =  Zeal::EqGame::get_active_corpse();
@@ -73,6 +74,7 @@ void looting::looted_item()
 	if (Zeal::EqGame::get_char_info()->CursorItem) 
 	{
 		loot_all = false;
+		delay_frames = -1;
 		return;
 	}
 	if (loot_all && Zeal::EqGame::Windows && Zeal::EqGame::Windows->Loot && Zeal::EqGame::Windows->Loot->IsVisible)
@@ -137,8 +139,7 @@ looting::looting(ZealService* zeal)
 		zeal->callbacks->add_packet([this](UINT opcode, char* buffer, UINT len) {
 			if (opcode == 0x4031)
 			{
-				delay_frames = 10;
-				
+				delay_frames = 200;
 			}
 		return false; 
 		});
