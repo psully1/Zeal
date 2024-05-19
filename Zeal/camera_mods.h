@@ -22,7 +22,7 @@ public:
 	float zeal_cam_pitch;
 	float zeal_cam_yaw;
 	float current_zoom = 0.f;
-	float zoom_speed = 5.f;
+	float zoom_speed = 15.f;
 	float desired_zoom = 0.f;
 	void set_smoothing(bool val);
 	void callback_main();

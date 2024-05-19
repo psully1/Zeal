@@ -27,11 +27,10 @@ ui_guild::ui_guild(ZealService* zeal, IO_ini* ini, ui_manager* mgr)
 	ui = mgr;
 	zeal->callbacks->add_generic([this]() { CleanUI(); }, callback_type::CleanUI);
 	zeal->callbacks->add_generic([this]() { InitUI(); }, callback_type::InitUI);
-			zeal->commands_hook->add("/guildwindow", { "" }, "",
-			[this](std::vector<std::string>& args) {
+			zeal->commands_hook->add("/guildwindow", { "" }, "", [this](std::vector<std::string>& args) {
 					if (guild)
 					{
-						Zeal::EqGame::print_chat("Attempting to show guild window");
+						// Zeal::EqGame::print_chat("Attempting to show guild window");
 						guild->IsVisible=true;
 					}
 					else

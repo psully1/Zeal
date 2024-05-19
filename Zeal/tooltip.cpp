@@ -22,7 +22,7 @@ void tooltip::set_timer(int _time)
 void tooltip::LoadSettings(IO_ini* ini)
 {
     if (!ini->exists("Zeal", "TooltipTime"))
-        ini->setValue<int>("Zeal", "TooltipTime", 500);
+        ini->setValue<int>("Zeal", "TooltipTime", 0);
     time = ini->getValue<bool>("Zeal", "ZealInput");
 }
 

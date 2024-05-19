@@ -197,8 +197,8 @@ void Binds::add_binds()
 			Zeal::EqGame::execute_cmd(5, key_down, 0);
 			if (key_down)
 			{
-				mem::write<BYTE>(0x53fb60, 4);
-				mem::write<BYTE>(0x53fb66, 4);
+				mem::write<BYTE>(0x53fb60, 5);
+				mem::write<BYTE>(0x53fb66, 5);
 			}
 			else
 			{
@@ -217,8 +217,8 @@ void Binds::add_binds()
 			Zeal::EqGame::execute_cmd(6, key_down, 0);
 			if (key_down)
 			{
-				mem::write<BYTE>(0x53f758, 4);
-				mem::write<BYTE>(0x53f75E, 4);
+				mem::write<BYTE>(0x53f758, 5);
+				mem::write<BYTE>(0x53f75E, 5);
 			}
 			else
 			{
@@ -234,6 +234,32 @@ void Binds::add_binds()
 		if (key_down && !Zeal::EqGame::EqGameInternal::UI_ChatInputCheck())
 		{
 			ZealService::get_instance()->autofire->SetAutoFire(!ZealService::get_instance()->autofire->autofire);
+		}
+		});
+	add_bind(253, "RD", "RD", key_category::Movement, [this](int key_down) {
+		if (!Zeal::EqGame::EqGameInternal::UI_ChatInputCheck())
+		{
+			if (key_down)
+			{
+				*(int*)(0x798984) = 1213325618;
+
+				//0x798984 --render distance
+				//0x798918 --fog maybe
+				//0x5e780c --render distance multiplier? reused for multiple things would have to remap it
+			}
+		}
+		});
+	add_bind(254, "Zoom", "Zoom", key_category::Movement, [this](int key_down) {
+		if (!Zeal::EqGame::EqGameInternal::UI_ChatInputCheck()) {
+			Zeal::EqStructures::CameraInfo* ci = Zeal::EqGame::get_camera();
+			if (ci) {
+				if (key_down) {
+					ci->FieldOfView = 4;
+				}
+				else {
+					ci->FieldOfView = 45;
+				}
+			}
 		}
 		});
 	add_bind(255, "Auto Inventory", "AutoInventory", key_category::Commands | key_category::Macros, [](int key_down) 
