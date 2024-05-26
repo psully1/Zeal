@@ -1,6 +1,6 @@
 #pragma once
 #include "framework.h"
-#define ZEAL_VERSION "0.1.76"
+#define ZEAL_VERSION "0.1.99"
 static std::atomic<bool> exitFlag(false);
 class ZealService
 {
@@ -21,7 +21,9 @@ public:
 	std::shared_ptr<SpellSets> spell_sets = nullptr;
 	std::shared_ptr<ItemDisplay> item_displays = nullptr;
 	std::shared_ptr<tooltip> tooltips = nullptr;
-
+	std::shared_ptr<Physics> physics = nullptr;
+	std::shared_ptr<FloatingDamage> floating_damage = nullptr;
+	std::shared_ptr<directx> dx = nullptr;
 
 	//other features
 	std::shared_ptr<OutputFile> outputfile = nullptr;

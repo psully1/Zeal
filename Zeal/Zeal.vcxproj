@@ -114,6 +114,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
       <AdditionalDependencies>winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -156,7 +157,10 @@
   <ItemGroup>
     <ClInclude Include="alarm.h" />
     <ClInclude Include="autofire.h" />
+    <ClInclude Include="directx.h" />
+    <ClInclude Include="floatingdamage.h" />
     <ClInclude Include="named_pipe.h" />
+    <ClInclude Include="physics.h" />
     <ClInclude Include="tooltip.h" />
     <ClInclude Include="ui_bank.h" />
     <ClInclude Include="item_display.h" />
@@ -193,6 +197,7 @@
     <ClInclude Include="spellsets.h" />
     <ClInclude Include="string_util.h" />
     <ClInclude Include="ui_guild.h" />
+    <ClInclude Include="ui_hotbutton.h" />
     <ClInclude Include="ui_loot.h" />
     <ClInclude Include="ui_manager.h" />
     <ClInclude Include="ui_options.h" />
@@ -203,8 +208,11 @@
   <ItemGroup>
     <ClCompile Include="alarm.cpp" />
     <ClCompile Include="autofire.cpp" />
+    <ClCompile Include="directx.cpp" />
     <ClCompile Include="EqPackets.h" />
+    <ClCompile Include="floatingdamage.cpp" />
     <ClCompile Include="named_pipe.cpp" />
+    <ClCompile Include="physics.cpp" />
     <ClCompile Include="tooltip.cpp" />
     <ClCompile Include="ui_bank.cpp" />
     <ClCompile Include="item_display.cpp" />
@@ -233,6 +241,7 @@
     <ClCompile Include="spellsets.cpp" />
     <ClCompile Include="string_util.cpp" />
     <ClCompile Include="ui_guild.cpp" />
+    <ClCompile Include="ui_hotbutton.cpp" />
     <ClCompile Include="ui_loot.cpp" />
     <ClCompile Include="ui_manager.cpp" />
     <ClCompile Include="ui_options.cpp" />

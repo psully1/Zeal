@@ -183,6 +183,18 @@
     <ClInclude Include="IO_ini.h">
       <Filter>Header Files\other</Filter>
     </ClInclude>
+    <ClInclude Include="physics.h">
+      <Filter>Header Files\hooks</Filter>
+    </ClInclude>
+    <ClInclude Include="ui_hotbutton.h">
+      <Filter>Header Files\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="floatingdamage.h">
+      <Filter>Header Files\hooks</Filter>
+    </ClInclude>
+    <ClInclude Include="directx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -287,9 +299,6 @@
     <ClCompile Include="EqPackets.h">
       <Filter>Header Files\everquest</Filter>
     </ClCompile>
-    <ClCompile Include="tooltip.cpp">
-      <Filter>Source Files\hooks</Filter>
-    </ClCompile>
     <ClCompile Include="ui_raid.cpp">
       <Filter>Source Files\ui</Filter>
     </ClCompile>
@@ -298,6 +307,21 @@
     </ClCompile>
     <ClCompile Include="named_pipe.cpp">
       <Filter>Source Files\other</Filter>
+    </ClCompile>
+    <ClCompile Include="physics.cpp">
+      <Filter>Source Files\hooks</Filter>
+    </ClCompile>
+    <ClCompile Include="tooltip.cpp">
+      <Filter>Source Files\memory</Filter>
+    </ClCompile>
+    <ClCompile Include="ui_hotbutton.cpp">
+      <Filter>Source Files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="floatingdamage.cpp">
+      <Filter>Source Files\hooks</Filter>
+    </ClCompile>
+    <ClCompile Include="directx.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

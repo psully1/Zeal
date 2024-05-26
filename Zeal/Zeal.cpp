@@ -11,11 +11,13 @@ LPTOP_LEVEL_EXCEPTION_FILTER WINAPI SetUnhandledExceptionFilter_Hook(LPTOP_LEVEL
 ZealService::ZealService()
 {
 	init_crashreporter();
+	
 	//since the hooked functions are called back via a different thread, make sure the service ptr is available immediately
 	ZealService::ptr_service = this; //this setup makes it not unit testable but since the caller functions of the hooks don't know the pointers I had to make a method to retrieve the base atleast
 	hooks = std::make_shared<HookWrapper>();
 	hooks->Add("SetUnhandledExceptionFilter", (int)SetUnhandledExceptionFilter, SetUnhandledExceptionFilter_Hook, hook_type_detour);
 	ini = std::make_shared<IO_ini>(".\\eqclient.ini"); //other functions rely on this hook
+	dx = std::make_shared<directx>();
 	//initialize the hooked function classes
 	commands_hook = std::make_shared<ChatCommands>(this); //other classes below rely on this class on initialize
 	callbacks = std::make_shared<CallbackManager>(this); //other functions rely on this hook
@@ -27,7 +29,9 @@ ZealService::ZealService()
 	eqstr_hook = std::make_shared<eqstr>(this);
 	spell_sets = std::make_shared<SpellSets>(this);
 	item_displays = std::make_shared<ItemDisplay>(this, ini.get());
-	tooltips = std::make_shared<tooltip>(this, ini.get());;
+	tooltips = std::make_shared<tooltip>(this, ini.get());
+	floating_damage = std::make_shared<FloatingDamage>(this, ini.get());
+	
 	this->apply_patches();
 
 	camera_mods = std::make_shared<CameraMods>(this, ini.get());
@@ -42,9 +46,9 @@ ZealService::ZealService()
 	ui = std::make_shared<ui_manager>(this, ini.get());
 	melody = std::make_shared<Melody>(this, ini.get());
 	autofire = std::make_shared<AutoFire>(this, ini.get());
+	physics = std::make_shared<Physics>(this, ini.get());
 
 	callbacks->add_generic([this]() { init_crashreporter(); }, callback_type::Zone);
-
 	this->basic_binds();
 }
 
@@ -111,8 +115,9 @@ void ZealService::basic_binds()
 	}
 
 	binds_hook->replace_cmd(72, [this](int state) 
-		{
-		Zeal::EqGame::get_self()->ChangeStance(Stance::Sit);
+	{
+		if (Zeal::EqGame::is_in_game())
+			Zeal::EqGame::get_self()->ChangeStance(Stance::Sit);
 		return false;
 	}); // hotkey camp auto-sit
 

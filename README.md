@@ -1,12 +1,34 @@
+### Compatible UI's
+- https://github.com/NilliP/NillipussUI_1080p
+- https://github.com/NilliP/NillipussUI_1440p
+- https://www.eqinterface.com/downloads/fileinfo.php?id=6959
+
+
 ### Features
 - Camera motion improvements
 - Additional binds
 - Additional commands
 - Additional ui support
 - Various bug fixes
+- Unique npc naming for better parsing
 
 ### Commands
 ___
+- `/timer`
+  - **Arguments:** `int`
+  - **Example:** `/timer 10`
+  - **Description:** holds the last hotbutton pressed down for the duration (decisecond like /pause).
+  
+- `/pipedelay`
+  - **Arguments:** `int`
+  - **Example:** `/pipedelay 500`
+  - **Description:** changes the delay between each loop of labels/gauges being sent out over the named pipe.
+
+- `/pipe`
+  - **Arguments:** `string`
+  - **Example:** `/pipe set a respawn timer for 30 seconds`
+  - **Description:** outputs a string through the named pipe.
+  
 - `/ttimer`
   - **Arguments:** `int`
   - **Example:** `/ttimer 500`

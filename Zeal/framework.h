@@ -19,6 +19,8 @@
 #include "item_display.h"
 #include "melody.h"
 #include "named_pipe.h"
+#include "floatingdamage.h"
+#include "directx.h"
 // other features
 #include "cycle_target.h"
 #include "outputfile.h"
@@ -31,6 +33,7 @@
 #include "ui_manager.h"
 #include "autofire.h"
 #include "tooltip.h"
+#include "physics.h"
 #include "Zeal.h"
 
 extern HMODULE this_module;
