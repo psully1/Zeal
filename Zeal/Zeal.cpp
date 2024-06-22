@@ -46,7 +46,6 @@ ZealService::ZealService()
 	ui = std::make_shared<ui_manager>(this, ini.get());
 	melody = std::make_shared<Melody>(this, ini.get());
 	autofire = std::make_shared<AutoFire>(this, ini.get());
-	physics = std::make_shared<Physics>(this, ini.get());
 
 	callbacks->add_generic([this]() { init_crashreporter(); }, callback_type::Zone);
 	this->basic_binds();

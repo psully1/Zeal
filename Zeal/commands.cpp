@@ -265,7 +265,6 @@ ChatCommands::ChatCommands(ZealService* zeal)
 			}
 			return false;
 		});
-	
 	add("/clientmanatick", { "/cmt" }, "Toggle client mana tick (disabled by default in this client).",
 		[this](std::vector<std::string>& args) {
 			BYTE orig1[7] = { 0x66, 0x01, 0xBE, 0x9A, 0x0, 0x0, 0x0 }; //0x4C3F93
@@ -284,7 +283,6 @@ ChatCommands::ChatCommands(ZealService* zeal)
 			}
 			return true;
 		});
-
 	add("/reloadskin", {}, "Reload your current ui with ini.",
 		[this](std::vector<std::string>& args) {
 			mem::write<BYTE>(0x8092d9, 1); //reload skin
@@ -333,7 +331,7 @@ ChatCommands::ChatCommands(ZealService* zeal)
 			}
 			return false;
 		});
-		add("/inspect", {}, "Inspect your current target.",
+	add("/inspect", {}, "Inspect your current target.",
 		[this, zeal](std::vector<std::string>& args) {
 				if (args.size() > 1 && args[1] == "target")
 				{
