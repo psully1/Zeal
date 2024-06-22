@@ -323,7 +323,7 @@ namespace Zeal
 								i++;
 							}
 						}
-						if (current_ent != EqGame::get_self() && !current_ent->IsHidden && current_ent->HpCurrent > 0 && add_to_list)
+						if (current_ent != EqGame::get_self() && !current_ent->IsHidden && add_to_list)
 							rEnts.push_back(current_ent);
 					}
 				}
@@ -429,7 +429,24 @@ namespace Zeal
 
 			ZealService::get_instance()->hooks->hook_map["PrintChat"]->original(PrintChat)(*(int*)0x809478, 0, buffer, 0, true);
 		}
+		void print_debug(const char* format, ...)
+		{
+			if (!is_in_game())
+				return;
 
+			va_list argptr;
+			char buffer[512];
+			char buffer_with_newline[514]; // Additional space for the newline and null terminator
+
+			va_start(argptr, format);
+			vsnprintf(buffer, sizeof(buffer), format, argptr);
+			va_end(argptr);
+
+			// Append newline character to the formatted string
+			snprintf(buffer_with_newline, sizeof(buffer_with_newline), "%s\n", buffer);
+
+			OutputDebugStringA(buffer_with_newline);
+		}
 		void print_chat(short color, const char* format, ...)
 		{
 			if (!is_in_game())
@@ -498,6 +515,8 @@ namespace Zeal
 		{
 			index -= 1;
 			long _param_1 = reinterpret_cast<long(__cdecl*)(int)>(0x4AA2C1)(index);
+			if (_param_1 == 0)
+				return 0xFFFFFFFF;
 			return (_param_1 & 0xff00 | _param_1 >> 0x10 & 0xff | (_param_1 | 0xffffff00) << 0x10);
 		}
 
@@ -744,7 +763,11 @@ namespace Zeal
 					return;
 				if (!Windows->SpellBook->IsVisible)
 					Zeal::EqGame::Spells::OpenBook();
-				Windows->SpellBook->BeginMemorize(book_index, gem_index, false);
+				ZealService::get_instance()->callbacks->add_delayed([book_index, gem_index]() {
+					if (Windows->SpellBook->IsVisible && Zeal::EqGame::get_self()->StandingState==Stance::Sit)
+						Windows->SpellBook->BeginMemorize(book_index, gem_index, false);
+				}, 25);
+				
 			}
 			void Forget(int index) 
 			{

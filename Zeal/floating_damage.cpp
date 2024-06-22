@@ -1,7 +1,8 @@
-#include "floatingdamage.h"
+#include "floating_damage.h"
 #include "EqPackets.h"
 #include "Zeal.h"
 #include "EqAddresses.h"
+#include "string_util.h"
 #include <cstdint>
 #include <random>
 int getRandomIntBetween(int min, int max) {
@@ -29,17 +30,22 @@ void DamageData::tick()
 		last_tick = GetTickCount64();
 	}
 }
-DamageData::DamageData(int dmg, bool _is_my_damage_dealt, bool _is_spell)
+DamageData::DamageData(int dmg, bool _is_my_damage_dealt, bool _is_spell, int _heal)
 {
 	is_spell = _is_spell;
 	is_my_damage = _is_my_damage_dealt;
-	str_dmg = std::to_string(dmg);
+	if (dmg>0)
+		str_dmg = std::to_string(dmg);
+	else if (_heal>0)
+		str_dmg = "+" + std::to_string(_heal);
+	damage = dmg;
 	opacity = 1.0f;
 	y_offset = getRandomIntBetween(-20, 20);
 	x_offset = getRandomIntBetween(-20, 20);
 	needs_removed = false;
 	last_tick = GetTickCount64();
 	start_time = GetTickCount64();
+	heal = _heal;
 }
 
 long FloatRGBAtoLong(float r, float g, float b, float a) {
@@ -78,13 +84,13 @@ long ModifyAlpha(long rgba, float newAlpha) {
 	return rgba;
 }
 
-void FloatingDamage::callback_render()
+void FloatingDamage::callback_deferred()
 {
 	if (!Zeal::EqGame::is_in_game() || !enabled)
 		return;
 	if (Zeal::EqGame::get_wnd_manager())
 	{
-		Zeal::EqUI::CTextureFont* fnt = Zeal::EqGame::get_wnd_manager()->GetFont(5);
+		Zeal::EqUI::CTextureFont* fnt = Zeal::EqGame::get_wnd_manager()->GetFont(font_size);
 		if (fnt)
 		{
 			std::vector<Zeal::EqStructures::Entity*> visible_ents = Zeal::EqGame::get_world_visible_actor_list(250, false);
@@ -97,7 +103,7 @@ void FloatingDamage::callback_render()
 					if (std::find(visible_ents.begin(), visible_ents.end(), target) != visible_ents.end() || target == Zeal::EqGame::get_self())
 					{
 						Vec2 screen_pos = { 0,0 };
-						(ZealService::get_instance()->dx->WorldToScreen({ target->Position.x,target->Position.y,target->Position.z }, screen_pos));
+						if (ZealService::get_instance()->dx->WorldToScreen({ target->Position.x,target->Position.y,target->Position.z }, screen_pos))
 						{
 							long color = FloatRGBAtoLong(1.0f, 1.0f, 1.0f, dmg.opacity);
 							if (dmg.is_my_damage) //if the damage is dealt by me
@@ -126,9 +132,10 @@ void FloatingDamage::callback_render()
 								if (dmg.is_spell)
 									color = Zeal::EqGame::get_user_color(28);
 								else
-									color = Zeal::EqGame::get_user_color(10); //npc being hit
+									color = Zeal::EqGame::get_user_color(24); //npc being hit
 							}
-
+							if (dmg.heal > 0)
+								color = 0x00FF00FF;
 							fnt->DrawWrappedText(dmg.str_dmg.c_str(), Zeal::EqUI::CXRect(screen_pos.x + dmg.y_offset, screen_pos.y + dmg.x_offset, screen_pos.x + 150, screen_pos.y + 150), Zeal::EqUI::CXRect(0, 0, screen_size.x*2, screen_size.y*2), ModifyAlpha(color, dmg.opacity), 1, 0);
 						}
 					}
@@ -147,12 +154,12 @@ void FloatingDamage::callback_render()
 	}
 }
 
-void FloatingDamage::add_damage(int* dmg_ptr)
+void FloatingDamage::add_damage(int* dmg_ptr, int heal)
 {
 	if (!enabled)
 		return;
 	Zeal::Packets::Damage_Struct* dmg = (Zeal::Packets::Damage_Struct*)dmg_ptr;
-	if (dmg && (int)dmg->damage > 0)
+	if (dmg && ((int)dmg->damage > 0 || heal>0))
 	{
 		Zeal::EqStructures::Entity* ent = Zeal::EqGame::get_entity_by_id(dmg->target);
 		Zeal::EqStructures::Entity* src = Zeal::EqGame::get_entity_by_id(dmg->source);
@@ -161,20 +168,15 @@ void FloatingDamage::add_damage(int* dmg_ptr)
 			bool is_me = false;
 			if (src && src == Zeal::EqGame::get_controlled())
 				is_me = true;
-			damage_numbers[ent].push_back(DamageData(dmg->damage, is_me, dmg->spellid > 0));
+			damage_numbers[ent].push_back(DamageData(dmg->damage, is_me, dmg->spellid > 0, heal));
 		}
 	}
 }
 
-int __fastcall DrawWindows(int t, int u)
-{
-	ZealService::get_instance()->floating_damage->callback_render();
-	return ZealService::get_instance()->hooks->hook_map["DrawWindows"]->original(DrawWindows)(t, u);
-}
 
 void __fastcall ReportSuccessfulHit(int t, int u, Zeal::Packets::Damage_Struct* dmg, char output_text, int heal)
 {
-	ZealService::get_instance()->floating_damage->add_damage((int*)dmg);
+	ZealService::get_instance()->floating_damage->add_damage((int*)dmg, heal);
 	ZealService::get_instance()->hooks->hook_map["ReportSuccessfulHit"]->original(ReportSuccessfulHit)(t, u, dmg, output_text, heal);
 }
 
@@ -186,12 +188,32 @@ void FloatingDamage::set_enabled(bool _enabled)
 
 FloatingDamage::FloatingDamage(ZealService* zeal, IO_ini* ini)
 {
+	//mem::write<BYTE>(0x4A594B, 0x14);
 	if (!ini->exists("Zeal", "FloatingDamage"))
 		ini->setValue<bool>("Zeal", "FloatingDamage", true);
 	enabled = ini->getValue<bool>("Zeal", "FloatingDamage");
+	zeal->callbacks->add_generic([this]() { callback_deferred(); }, callback_type::AddDeferred);
+	zeal->commands_hook->add("/fcd", {}, "Toggles floating combat text or adjusts the font size with argument",
+		[this, ini](std::vector<std::string>& args) {
+			int new_size = 5;
+			if (args.size() == 2)
+			{
+				if (Zeal::String::tryParse(args[1], &new_size))
+				{
+					font_size = new_size;
+					Zeal::EqGame::print_chat("Floating combat font size is now %i", font_size);
+				}
+			}
+			else
+			{
+				set_enabled(!enabled);
+				Zeal::EqGame::print_chat("Floating combat text is %s", enabled ? "Enabled" : "Disabled");
+			}
+			return true;
+		});
 
 	zeal->hooks->Add("ReportSuccessfulHit", 0x5297D2, ReportSuccessfulHit, hook_type_detour);
-	zeal->hooks->Add("DrawWindows", 0x59E000, DrawWindows, hook_type_detour); //render in this hook so damage is displayed behind ui
+	
 	//zeal->callbacks->add_generic([this]() { callback_render();  }, callback_type::Render);
 }
 

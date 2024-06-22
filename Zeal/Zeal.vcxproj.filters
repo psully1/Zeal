@@ -189,11 +189,17 @@
     <ClInclude Include="ui_hotbutton.h">
       <Filter>Header Files\ui</Filter>
     </ClInclude>
-    <ClInclude Include="floatingdamage.h">
+    <ClInclude Include="floating_damage.h">
       <Filter>Header Files\hooks</Filter>
     </ClInclude>
     <ClInclude Include="directx.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="target_ring.h">
+      <Filter>Header Files\other</Filter>
+    </ClInclude>
+    <ClInclude Include="crash_handler.h">
+      <Filter>Header Files\other</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -317,11 +323,17 @@
     <ClCompile Include="ui_hotbutton.cpp">
       <Filter>Source Files\ui</Filter>
     </ClCompile>
-    <ClCompile Include="floatingdamage.cpp">
+    <ClCompile Include="floating_damage.cpp">
       <Filter>Source Files\hooks</Filter>
     </ClCompile>
+    <ClCompile Include="target_ring.cpp">
+      <Filter>Source Files\other</Filter>
+    </ClCompile>
+    <ClCompile Include="crash_handler.cpp">
+      <Filter>Source Files\other</Filter>
+    </ClCompile>
     <ClCompile Include="directx.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\hooks</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

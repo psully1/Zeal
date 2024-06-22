@@ -1,11 +1,12 @@
 #pragma once
 #include "framework.h"
-#define ZEAL_VERSION "0.1.99"
+#define ZEAL_VERSION "0.2.10"
 static std::atomic<bool> exitFlag(false);
 class ZealService
 {
 public:
 	//hooks
+	std::shared_ptr<CrashHandler> crash_handler = nullptr;
 	std::shared_ptr<IO_ini> ini = nullptr;
 	std::shared_ptr<HookWrapper> hooks = nullptr;
 	std::shared_ptr<named_pipe> pipe = nullptr;
@@ -36,10 +37,10 @@ public:
 	std::shared_ptr<ui_manager> ui = nullptr;
 	std::shared_ptr<Melody> melody = nullptr;
 	std::shared_ptr<AutoFire> autofire = nullptr;
+	std::shared_ptr<TargetRing> target_ring = nullptr;
 	
 	ZealService();
 	~ZealService();
-	void init_crashreporter();
 	static ZealService* ptr_service;
 	//static data/functions to get a base ptr since some hook callbacks don't have the information required
 	static ZealService* get_instance();

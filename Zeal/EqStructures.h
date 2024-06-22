@@ -331,8 +331,8 @@ namespace Zeal
 			/* 0x004C */ FLOAT ZCeiling; // Z axis of the ceiling or first collision above player
 			/* 0x0050 */ PVOID Unknown0050; // EqMobileEmitter*
 			/* 0x0054 */ DWORD Unknown0054;
-			/* 0x0058 */ DWORD UnknownTimer1;
-			/* 0x005C */ DWORD UnknownTimer2;
+			/* 0x0058 */ DWORD PhysicsTimer;
+			/* 0x005C */ DWORD LastTick;
 			/* 0x0060 */ DWORD UnknownTimer3;
 			/* 0x0064 */ DWORD UnknownTimer4;
 			/* 0x0068 */ DWORD AttackTimer;
@@ -374,7 +374,9 @@ namespace Zeal
 			/* 0x0198 */ int Unsure_Strafe_Calc;
 			/* 0x019C */ BYTE Unknown019c[24];
 			/* 0x01B4 */ DWORD IsInvisible; // NPCs only? used by /hidecorpses command
-			/* 0x01B8 */ BYTE Unknown01B8[168];
+			/* 0x01B8 */ BYTE Unknown01B8[10];
+			/* 0x01C2 */ SHORT PetID;
+			/* 0x01C4 */ BYTE Unknown01C4[156];
 			/* 0x0260 */ DWORD IsHoldingBoth;
 			/* 0x0264 */ DWORD IsHoldingSecondary;
 			/* 0x0268 */ DWORD IsHoldingPrimary;

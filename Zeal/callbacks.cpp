@@ -12,14 +12,22 @@ void __fastcall main_loop_hk(int t, int unused)
 {
 	ZealService* zeal = ZealService::get_instance();
 	zeal->callbacks->invoke_generic(callback_type::MainLoop);
-	zeal->hooks->hook_map["main_loop"]->original(main_loop_hk)(t, unused);
+	zeal->callbacks->invoke_delayed();
+	zeal->hooks->hook_map["MainLoop"]->original(main_loop_hk)(t, unused);
 }
 
 void __fastcall render_hk(int t, int unused)
 {
 	ZealService* zeal = ZealService::get_instance();
-	zeal->callbacks->invoke_generic(callback_type::Render);
 	zeal->hooks->hook_map["Render"]->original(render_hk)(t, unused);
+	zeal->callbacks->invoke_generic(callback_type::Render);
+}
+
+void render_ui(int x)
+{
+	ZealService* zeal = ZealService::get_instance();
+	zeal->callbacks->invoke_generic(callback_type::RenderUI);
+	zeal->hooks->hook_map["RenderUI"]->original(render_ui)(x);
 }
 
 void _fastcall charselect_hk(int t, int u)
@@ -38,6 +46,11 @@ void CallbackManager::invoke_generic(callback_type fn)
 {
 	for (auto& f : generic_functions[fn])
 			f();
+}
+
+void CallbackManager::add_delayed(std::function<void()> callback_function, int ms)
+{
+	delayed_functions.push_back({ GetTickCount64() + ms, callback_function });
 }
 
 void CallbackManager::add_generic(std::function<void()> callback_function, callback_type fn)
@@ -70,6 +83,26 @@ void __stdcall clean_up_ui()
 	ZealService* zeal = ZealService::get_instance();
 	zeal->callbacks->invoke_generic(callback_type::CleanUI);
 	zeal->hooks->hook_map["CleanUpUI"]->original(clean_up_ui)();
+}
+
+void CallbackManager::invoke_delayed()
+{
+	ULONGLONG current_time = GetTickCount64();
+	for (auto& [end_time, fn] : delayed_functions)
+	{
+		if (current_time >= end_time)
+			fn();
+	}
+	delayed_functions.erase(
+		std::remove_if(
+			delayed_functions.begin(),
+			delayed_functions.end(),
+			[current_time](const std::pair<ULONGLONG, std::function<void()>>& item) {
+				return current_time>item.first;
+			}
+		),
+		delayed_functions.end()
+	);
 }
 
 bool CallbackManager::invoke_packet(callback_type cb_type, UINT opcode, char* buffer, UINT len)
@@ -127,7 +160,7 @@ void executecmd_hk(UINT cmd, bool isdown, int unk2)
 	if (zeal->callbacks->invoke_command(callback_type::ExecuteCmd, cmd, isdown))
 		return;
 
-	zeal->hooks->hook_map["executecmd"]->original(executecmd_hk)(cmd, isdown, unk2);
+	zeal->hooks->hook_map["ExecuteCmd"]->original(executecmd_hk)(cmd, isdown, unk2);
 }
 
 void msg_new_text(char* msg)
@@ -138,15 +171,27 @@ void msg_new_text(char* msg)
 	//	Zeal::EqGame::print_chat("self was null during new text");
 		return;
 	}
-	zeal->hooks->hook_map["msg_new_text"]->original(msg_new_text)(msg);
+	zeal->hooks->hook_map["MsgNewText"]->original(msg_new_text)(msg);
+}
+
+int __fastcall AddDeferred(int t, int u)
+{
+	ZealService* zeal = ZealService::get_instance();
+	zeal->callbacks->invoke_generic(callback_type::AddDeferred);
+	return ZealService::get_instance()->hooks->hook_map["AddDeferred"]->original(AddDeferred)(t, u);
 }
 
 CallbackManager::CallbackManager(ZealService* zeal)
 {
-	zeal->hooks->Add("msg_new_text", 0x4e25a1, msg_new_text, hook_type_detour);
-	zeal->hooks->Add("executecmd", 0x54050c, executecmd_hk, hook_type_detour);
-	zeal->hooks->Add("main_loop", 0x5473c3, main_loop_hk, hook_type_detour);
+	zeal->hooks->Add("AddDeferred", 0x59E000, AddDeferred, hook_type_detour); //render in this hook so damage is displayed behind ui
+	zeal->hooks->Add("MsgNewText", 0x4e25a1, msg_new_text, hook_type_detour);
+	zeal->hooks->Add("ExecuteCmd", 0x54050c, executecmd_hk, hook_type_detour);
+	zeal->hooks->Add("MainLoop", 0x5473c3, main_loop_hk, hook_type_detour);
 	zeal->hooks->Add("Render", 0x4AA8BC, render_hk, hook_type_detour);
+	HMODULE eqfx = GetModuleHandleA("eqgfx_dx8.dll");
+	if (eqfx)
+		zeal->hooks->Add("RenderUI", (DWORD)eqfx+0x6b7f0, render_ui, hook_type_detour);
+	
 	zeal->hooks->Add("EnterZone", 0x53D2C4, enterzone_hk, hook_type_detour);
 	zeal->hooks->Add("CleanUpUI", 0x4A6EBC, clean_up_ui, hook_type_detour);
 	zeal->hooks->Add("DoCharacterSelection", 0x53b9cf, charselect_hk, hook_type_detour);

@@ -1,3 +1,6 @@
+### Zeal pipes in c#
+- https://github.com/OkieDan/ZealPipes
+
 ### Compatible UI's
 - https://github.com/NilliP/NillipussUI_1080p
 - https://github.com/NilliP/NillipussUI_1440p
@@ -50,6 +53,7 @@ ___
     
 - `/melody`
   - **Arguments:** `song gem #'s (maximum of 5)`
+  - **Aliases:** `/mel`
   - **Example:** `/melody 1 4 2 3`
   - **Description:** plays songs in order until interrupted in any fashion.
     
