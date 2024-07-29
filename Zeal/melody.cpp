@@ -211,7 +211,7 @@ Melody::Melody(ZealService* zeal, IO_ini* ini)
                 return true;
             }
 
-            if (args.size() > 6)
+            if (args.size() > 10)
             {
                 Zeal::EqGame::print_chat(USERCOLOR_SPELL_FAILURE, "A melody can only consist of up to 5 songs.");
                 return true;
